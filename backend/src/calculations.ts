@@ -1,0 +1,91 @@
+import type { Income, Expense, PaymentMethod, MonthlyOverview } from './types.js';
+
+/**
+ * Calculate total income
+ */
+export function calculateTotalIncome(incomes: Income[]): number {
+    return incomes.reduce((sum, income) => sum + income.amount, 0);
+}
+
+/**
+ * Calculate total expenses for a given month
+ * Fixed expenses are always included, variable expenses only for the specified month
+ */
+export function calculateTotalExpenses(expenses: Expense[], yearMonth: number): number {
+    return expenses
+        .filter(e => e.expense_type === 'fixed' || e.year_month === yearMonth)
+        .reduce((sum, expense) => sum + expense.amount, 0);
+}
+
+/**
+ * Calculate expenses grouped by payment method
+ */
+export function calculateExpensesByPaymentMethod(
+    expenses: Expense[],
+    yearMonth: number
+): Record<PaymentMethod, number> {
+    const result: Record<PaymentMethod, number> = {
+        efaktura: 0,
+        autogiro_jag: 0,
+        autogiro_fruga: 0,
+        autogiro_gemensamt: 0,
+    };
+
+    expenses
+        .filter(e => e.expense_type === 'fixed' || e.year_month === yearMonth)
+        .forEach(expense => {
+            result[expense.payment_method] += expense.amount;
+        });
+
+    return result;
+}
+
+/**
+ * Calculate how much each person needs to transfer to the joint account
+ * Split is 50/50 by default
+ */
+export function calculateTransferToJoint(
+    expenses: Expense[],
+    yearMonth: number,
+    splitRatio: number = 0.5
+): { jag: number; fruga: number } {
+    const jointTotal = expenses
+        .filter(e => e.expense_type === 'fixed' || e.year_month === yearMonth)
+        .filter(e => e.payment_method === 'autogiro_gemensamt')
+        .reduce((sum, e) => sum + e.amount, 0);
+
+    return {
+        jag: Math.round(jointTotal * splitRatio * 100) / 100,
+        fruga: Math.round(jointTotal * (1 - splitRatio) * 100) / 100,
+    };
+}
+
+/**
+ * Calculate complete monthly overview
+ */
+export function calculateMonthlyOverview(
+    incomes: Income[],
+    expenses: Expense[],
+    yearMonth: number
+): MonthlyOverview {
+    const totalIncome = calculateTotalIncome(incomes);
+    const totalExpenses = calculateTotalExpenses(expenses, yearMonth);
+    const expensesByPaymentMethod = calculateExpensesByPaymentMethod(expenses, yearMonth);
+    const transferToJoint = calculateTransferToJoint(expenses, yearMonth);
+
+    return {
+        yearMonth,
+        totalIncome,
+        totalExpenses,
+        balance: totalIncome - totalExpenses,
+        transferToJoint,
+        expensesByPaymentMethod,
+    };
+}
+
+/**
+ * Get expenses for a specific month (fixed + variable for that month)
+ */
+export function getExpensesForMonth(expenses: Expense[], yearMonth: number): Expense[] {
+    return expenses.filter(e => e.expense_type === 'fixed' || e.year_month === yearMonth);
+}
