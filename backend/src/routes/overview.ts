@@ -17,7 +17,7 @@ router.get('/:yearMonth', (req: Request, res: Response) => {
   const allExpenses = db.getAllExpenses();
 
   // Filter expenses for the month
-  const expenses = allExpenses.filter(e =>
+  const expenses = allExpenses.filter((e: any) =>
     e.expense_type === 'fixed' || e.year_month === yearMonth
   ) as Expense[];
 
@@ -30,8 +30,8 @@ router.get('/', (req: Request, res: Response) => {
   const expenses = db.getAllExpenses();
   const months = [...new Set(
     expenses
-      .filter(e => e.year_month !== null)
-      .map(e => e.year_month)
+      .filter((e: any) => e.year_month !== null)
+      .map((e: any) => e.year_month as number)
   )].sort((a, b) => (b ?? 0) - (a ?? 0));
 
   res.json(months);

@@ -1,5 +1,7 @@
 import { Router, Request, Response } from 'express';
 import db from '../db.js';
+import { validate } from '../middleware/validate.js';
+import { IncomeSchema } from '../db/schemas.js';
 
 const router = Router();
 
@@ -9,12 +11,8 @@ router.get('/', (req: Request, res: Response) => {
 });
 
 // Create income
-router.post('/', (req: Request, res: Response) => {
+router.post('/', validate(IncomeSchema), (req: Request, res: Response) => {
     const { name, owner, amount } = req.body;
-
-    if (!name || !owner || amount === undefined) {
-        return res.status(400).json({ error: 'Name, owner, and amount are required' });
-    }
 
     if (!['jag', 'fruga'].includes(owner)) {
         return res.status(400).json({ error: 'Owner must be "jag" or "fruga"' });
@@ -25,11 +23,11 @@ router.post('/', (req: Request, res: Response) => {
 });
 
 // Update income
-router.put('/:id', (req: Request, res: Response) => {
+router.put('/:id', validate(IncomeSchema.partial()), (req: Request, res: Response) => {
     const id = parseInt(req.params.id);
-    const { name, owner, amount } = req.body;
+    const updates = req.body;
 
-    const income = db.updateIncome(id, { name, owner, amount });
+    const income = db.updateIncome(id, updates);
     if (!income) {
         return res.status(404).json({ error: 'Income not found' });
     }
