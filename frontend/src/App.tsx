@@ -18,13 +18,11 @@ import { IncomeModal } from './components/Modals/IncomeModal';
 interface Settings {
     person1Name: string;
     person2Name: string;
-    splitRatio: number; // 0.5 = 50/50
 }
 
 const DEFAULT_SETTINGS: Settings = {
     person1Name: 'Person 1',
     person2Name: 'Person 2',
-    splitRatio: 0.5,
 };
 
 function getSettings(): Settings {

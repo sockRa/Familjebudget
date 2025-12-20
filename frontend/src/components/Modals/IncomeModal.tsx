@@ -4,7 +4,6 @@ import { Income } from '../../types';
 interface Settings {
     person1Name: string;
     person2Name: string;
-    splitRatio: number;
 }
 
 interface IncomeModalProps {
