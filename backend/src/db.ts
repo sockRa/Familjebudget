@@ -12,7 +12,7 @@ export function getCategoryById(id: number) {
 
 export function createCategory(name: string, color: string) {
   const result = db.prepare('INSERT INTO categories (name, color) VALUES (?, ?)').run(name, color);
-  return { id: result.lastInsertRowid, name, color };
+  return { id: Number(result.lastInsertRowid), name, color };
 }
 
 export function updateCategory(id: number, updates: { name?: string; color?: string }) {
@@ -46,7 +46,7 @@ export function getIncomeById(id: number) {
 
 export function createIncome(name: string, owner: string, amount: number) {
   const result = db.prepare('INSERT INTO incomes (name, owner, amount) VALUES (?, ?, ?)').run(name, owner, amount);
-  return { id: result.lastInsertRowid, name, owner, amount };
+  return { id: Number(result.lastInsertRowid), name, owner, amount };
 }
 
 export function updateIncome(id: number, updates: { name?: string; owner?: string; amount?: number }) {
@@ -78,11 +78,11 @@ export function getExpenses(yearMonth?: number) {
   const params = [];
 
   if (yearMonth) {
-    query += ' WHERE e.expense_type = "fixed" OR e.year_month = ?';
+    query += " WHERE e.expense_type = 'fixed' OR e.year_month = ?";
     params.push(yearMonth);
   }
 
-  query += ' ORDER BY e.expense_type = "fixed" DESC, e.payment_method, e.name COLLATE NOCASE';
+  query += " ORDER BY e.expense_type = 'fixed' DESC, e.payment_method, e.name COLLATE NOCASE";
 
   return db.prepare(query).all(...params);
 }
