@@ -9,7 +9,7 @@ export const validate = (schema: ZodSchema) => async (req: Request, res: Respons
         if (error instanceof ZodError) {
             return res.status(400).json({
                 error: 'Validation failed',
-                details: error.errors.map((err: any) => ({
+                details: error.issues.map((err: any) => ({
                     path: err.path.join('.'),
                     message: err.message
                 }))

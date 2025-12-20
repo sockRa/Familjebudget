@@ -32,7 +32,7 @@ router.get('/', (req: Request, res: Response) => {
     expenses
       .filter((e: any) => e.year_month !== null)
       .map((e: any) => e.year_month as number)
-  )].sort((a, b) => (b ?? 0) - (a ?? 0));
+  )].sort((a, b) => (Number(b) ?? 0) - (Number(a) ?? 0));
 
   res.json(months);
 });

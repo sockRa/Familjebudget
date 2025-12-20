@@ -1,4 +1,4 @@
-import Database from 'better-sqlite3';
+import { default as BetterSqlite3, Database } from 'better-sqlite3';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { mkdirSync } from 'fs';
@@ -12,7 +12,7 @@ const DB_FILE = join(DATA_DIR, 'budget.sqlite');
 // Ensure data directory exists
 mkdirSync(DATA_DIR, { recursive: true });
 
-const db = new Database(DB_FILE);
+const db: Database = new BetterSqlite3(DB_FILE);
 
 // Migration/Initialization
 db.exec(`

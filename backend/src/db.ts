@@ -1,5 +1,5 @@
-import db from './sqlite.js';
-import { CategorySchema, IncomeSchema, ExpenseSchema } from './schemas.js';
+import db from './db/sqlite.js';
+import { CategorySchema, IncomeSchema, ExpenseSchema } from './db/schemas.js';
 
 // Categories
 export function getCategories() {

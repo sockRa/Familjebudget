@@ -20,7 +20,7 @@ async function migrate() {
 
     // Migrate Categories
     const insertCategory = db.prepare('INSERT INTO categories (id, name, color) VALUES (?, ?, ?)');
-    const migrateCategories = db.transaction((categories) => {
+    const migrateCategories = db.transaction((categories: any[]) => {
         for (const cat of categories) {
             insertCategory.run(cat.id, cat.name, cat.color);
         }
@@ -28,7 +28,7 @@ async function migrate() {
 
     // Migrate Incomes
     const insertIncome = db.prepare('INSERT INTO incomes (id, name, owner, amount) VALUES (?, ?, ?, ?)');
-    const migrateIncomes = db.transaction((incomes) => {
+    const migrateIncomes = db.transaction((incomes: any[]) => {
         for (const inc of incomes) {
             insertIncome.run(inc.id, inc.name, inc.owner, inc.amount);
         }
@@ -39,7 +39,7 @@ async function migrate() {
         INSERT INTO expenses (id, name, amount, category_id, expense_type, payment_method, payment_status, year_month, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
-    const migrateExpenses = db.transaction((expenses) => {
+    const migrateExpenses = db.transaction((expenses: any[]) => {
         for (const exp of expenses) {
             insertExpense.run(
                 exp.id,
