@@ -13,7 +13,7 @@ router.get('/:yearMonth', (req: Request, res: Response) => {
     return res.status(400).json({ error: 'Invalid yearMonth format. Use YYYYMM.' });
   }
 
-  const incomes = db.getAllIncomes() as Income[];
+  const incomes = db.getIncomes(yearMonth) as Income[];
   const allExpenses = db.getAllExpenses();
 
   // Filter expenses for the month

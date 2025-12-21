@@ -26,7 +26,9 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     owner TEXT NOT NULL,
-    amount REAL NOT NULL
+    amount REAL NOT NULL,
+    income_type TEXT NOT NULL DEFAULT 'fixed' CHECK(income_type IN ('fixed', 'variable')),
+    year_month INTEGER
   );
 
   CREATE TABLE IF NOT EXISTS expenses (
@@ -42,5 +44,17 @@ db.exec(`
     FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE SET NULL
   );
 `);
+
+// Migration: Add income_type and year_month columns to existing incomes table
+try {
+  db.exec(`ALTER TABLE incomes ADD COLUMN income_type TEXT NOT NULL DEFAULT 'fixed' CHECK(income_type IN ('fixed', 'variable'))`);
+} catch (e) {
+  // Column already exists
+}
+try {
+  db.exec(`ALTER TABLE incomes ADD COLUMN year_month INTEGER`);
+} catch (e) {
+  // Column already exists
+}
 
 export default db;

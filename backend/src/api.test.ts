@@ -26,13 +26,15 @@ describe('API Routes', () => {
                 .send({
                     name: 'Test Income',
                     owner: 'jag',
-                    amount: 1000
+                    amount: 1000,
+                    income_type: 'fixed'
                 });
 
             expect(res.status).toBe(201);
             expect(res.body.name).toBe('Test Income');
             expect(res.body.owner).toBe('jag');
             expect(res.body.amount).toBe(1000);
+            expect(res.body.income_type).toBe('fixed');
             expect(typeof res.body.id).toBe('number');
         });
 
@@ -49,8 +51,8 @@ describe('API Routes', () => {
         });
 
         it('should get all incomes', async () => {
-            await request(app).post('/api/incomes').send({ name: 'I1', owner: 'jag', amount: 100 });
-            await request(app).post('/api/incomes').send({ name: 'I2', owner: 'fruga', amount: 200 });
+            await request(app).post('/api/incomes').send({ name: 'I1', owner: 'jag', amount: 100, income_type: 'fixed' });
+            await request(app).post('/api/incomes').send({ name: 'I2', owner: 'fruga', amount: 200, income_type: 'fixed' });
 
             const res = await request(app).get('/api/incomes');
             expect(res.status).toBe(200);

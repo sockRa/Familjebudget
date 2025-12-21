@@ -34,10 +34,11 @@ export const categoriesApi = {
 
 // Incomes
 export const incomesApi = {
-    getAll: () => fetchJSON<import('./types').Income[]>('/incomes'),
-    create: (data: { name: string; owner: string; amount: number }) =>
+    getAll: (yearMonth?: number) =>
+        fetchJSON<import('./types').Income[]>(`/incomes${yearMonth ? `?yearMonth=${yearMonth}` : ''}`),
+    create: (data: { name: string; owner: string; amount: number; income_type: string; year_month?: number }) =>
         fetchJSON<import('./types').Income>('/incomes', { method: 'POST', body: JSON.stringify(data) }),
-    update: (id: number, data: { name?: string; owner?: string; amount?: number }) =>
+    update: (id: number, data: { name?: string; owner?: string; amount?: number; income_type?: string; year_month?: number | null }) =>
         fetchJSON<import('./types').Income>(`/incomes/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     delete: (id: number) =>
         fetchJSON<void>(`/incomes/${id}`, { method: 'DELETE' }),

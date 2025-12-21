@@ -36,25 +36,49 @@ export function deleteCategory(id: number): boolean {
 }
 
 // Incomes
-export function getIncomes() {
-  return db.prepare('SELECT * FROM incomes ORDER BY owner, name COLLATE NOCASE').all();
+export function getIncomes(yearMonth?: number) {
+  let query = 'SELECT * FROM incomes';
+  const params = [];
+
+  if (yearMonth) {
+    query += " WHERE income_type = 'fixed' OR year_month = ?";
+    params.push(yearMonth);
+  }
+
+  query += ' ORDER BY owner, name COLLATE NOCASE';
+  return db.prepare(query).all(...params);
 }
 
 export function getIncomeById(id: number) {
   return db.prepare('SELECT * FROM incomes WHERE id = ?').get(id);
 }
 
-export function createIncome(name: string, owner: string, amount: number) {
-  const result = db.prepare('INSERT INTO incomes (name, owner, amount) VALUES (?, ?, ?)').run(name, owner, amount);
-  return { id: Number(result.lastInsertRowid), name, owner, amount };
+export function createIncome(name: string, owner: string, amount: number, income_type: string, year_month: number | null) {
+  const result = db.prepare('INSERT INTO incomes (name, owner, amount, income_type, year_month) VALUES (?, ?, ?, ?, ?)').run(
+    name, owner, amount, income_type, income_type === 'fixed' ? null : year_month
+  );
+  return { id: Number(result.lastInsertRowid), name, owner, amount, income_type, year_month: income_type === 'fixed' ? null : year_month };
 }
 
-export function updateIncome(id: number, updates: { name?: string; owner?: string; amount?: number }) {
+export function updateIncome(id: number, updates: { name?: string; owner?: string; amount?: number; income_type?: string; year_month?: number | null }) {
   const sets = [];
   const params = [];
   if (updates.name !== undefined) { sets.push('name = ?'); params.push(updates.name); }
   if (updates.owner !== undefined) { sets.push('owner = ?'); params.push(updates.owner); }
   if (updates.amount !== undefined) { sets.push('amount = ?'); params.push(updates.amount); }
+  if (updates.income_type !== undefined) {
+    sets.push('income_type = ?');
+    params.push(updates.income_type);
+    // If switching to fixed, clear year_month
+    if (updates.income_type === 'fixed') {
+      sets.push('year_month = ?');
+      params.push(null);
+    }
+  }
+  if (updates.year_month !== undefined && updates.income_type !== 'fixed') {
+    sets.push('year_month = ?');
+    params.push(updates.year_month);
+  }
 
   if (sets.length > 0) {
     params.push(id);

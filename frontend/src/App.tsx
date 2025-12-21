@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-    Category, Income, Expense, MonthlyOverview, PaymentStatus,
+    Category, Income, Expense, MonthlyOverview, PaymentStatus, IncomeType,
     formatCurrency, formatYearMonth, getCurrentYearMonth, addMonths,
     PAYMENT_METHOD_LABELS
 } from './types';
@@ -67,7 +67,7 @@ function App() {
         try {
             const [cats, incs, exps, ov] = await Promise.all([
                 categoriesApi.getAll(),
-                incomesApi.getAll(),
+                incomesApi.getAll(currentMonth),
                 expensesApi.getAll(currentMonth),
                 overviewApi.get(currentMonth),
             ]);
@@ -138,7 +138,7 @@ function App() {
         }
     };
 
-    const handleSaveIncome = async (data: { name: string; owner: string; amount: number }) => {
+    const handleSaveIncome = async (data: { name: string; owner: string; amount: number; income_type: IncomeType; year_month?: number }) => {
         try {
             if (editingIncome) {
                 await incomesApi.update(editingIncome.id, data);
@@ -288,50 +288,97 @@ function App() {
             )}
 
             {activeTab === 'incomes' && (
-                <div className="card">
-                    <div className="section-header">
-                        <span className="section-title">Inkomster</span>
-                        <span className="section-total">{formatCurrency(incomes.reduce((s, i) => s + i.amount, 0))}</span>
-                    </div>
-                    <div className="income-list">
-                        {incomes.map(income => (
-                            <div key={income.id} className="income-item">
-                                <span className={`income-owner ${income.owner}`}>
-                                    {getOwnerLabel(income.owner)}
-                                </span>
-                                <span className="expense-name">{income.name}</span>
-                                <span className="expense-amount">{formatCurrency(income.amount)}</span>
-                                <div style={{ display: 'flex', gap: 'var(--space-xs)' }}>
-                                    <button
-                                        className="btn btn-icon btn-secondary"
-                                        onClick={() => { setEditingIncome(income); setShowIncomeModal(true); }}
-                                    >
-                                        ✏️
-                                    </button>
-                                    <button
-                                        className="btn btn-icon btn-danger"
-                                        onClick={() => handleDeleteIncome(income.id)}
-                                    >
-                                        🗑️
-                                    </button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                    {incomes.length === 0 && (
-                        <div className="empty-state">
-                            <div className="empty-state-icon">💵</div>
-                            <p>Inga inkomster tillagda</p>
+                <>
+                    {/* Fixed incomes */}
+                    <div className="card">
+                        <div className="section-header">
+                            <span className="section-title">Fasta inkomster</span>
+                            <span className="section-total">
+                                {formatCurrency(incomes.filter(i => i.income_type === 'fixed').reduce((s, i) => s + i.amount, 0))}
+                            </span>
                         </div>
-                    )}
+                        <div className="income-list">
+                            {incomes.filter(i => i.income_type === 'fixed').map(income => (
+                                <div key={income.id} className="income-item">
+                                    <span className={`income-owner ${income.owner}`}>
+                                        {getOwnerLabel(income.owner)}
+                                    </span>
+                                    <span className="expense-name">{income.name}</span>
+                                    <span className="expense-amount">{formatCurrency(income.amount)}</span>
+                                    <div style={{ display: 'flex', gap: 'var(--space-xs)' }}>
+                                        <button
+                                            className="btn btn-icon btn-secondary"
+                                            onClick={() => { setEditingIncome(income); setShowIncomeModal(true); }}
+                                        >
+                                            ✏️
+                                        </button>
+                                        <button
+                                            className="btn btn-icon btn-danger"
+                                            onClick={() => handleDeleteIncome(income.id)}
+                                        >
+                                            🗑️
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        {incomes.filter(i => i.income_type === 'fixed').length === 0 && (
+                            <div className="empty-state">
+                                <div className="empty-state-icon">💵</div>
+                                <p>Inga fasta inkomster tillagda</p>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Variable incomes */}
+                    <div className="card">
+                        <div className="section-header">
+                            <span className="section-title">Variabla inkomster ({formatYearMonth(currentMonth)})</span>
+                            <span className="section-total">
+                                {formatCurrency(incomes.filter(i => i.income_type === 'variable').reduce((s, i) => s + i.amount, 0))}
+                            </span>
+                        </div>
+                        <div className="income-list">
+                            {incomes.filter(i => i.income_type === 'variable').map(income => (
+                                <div key={income.id} className="income-item">
+                                    <span className={`income-owner ${income.owner}`}>
+                                        {getOwnerLabel(income.owner)}
+                                    </span>
+                                    <span className="expense-name">{income.name}</span>
+                                    <span className="expense-amount">{formatCurrency(income.amount)}</span>
+                                    <div style={{ display: 'flex', gap: 'var(--space-xs)' }}>
+                                        <button
+                                            className="btn btn-icon btn-secondary"
+                                            onClick={() => { setEditingIncome(income); setShowIncomeModal(true); }}
+                                        >
+                                            ✏️
+                                        </button>
+                                        <button
+                                            className="btn btn-icon btn-danger"
+                                            onClick={() => handleDeleteIncome(income.id)}
+                                        >
+                                            🗑️
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        {incomes.filter(i => i.income_type === 'variable').length === 0 && (
+                            <div className="empty-state">
+                                <div className="empty-state-icon">📦</div>
+                                <p>Inga variabla inkomster denna månad</p>
+                            </div>
+                        )}
+                    </div>
+
                     <button
                         className="btn btn-primary"
                         onClick={() => { setEditingIncome(null); setShowIncomeModal(true); }}
-                        style={{ width: '100%', marginTop: 'var(--space-lg)', padding: 'var(--space-md)' }}
+                        style={{ width: '100%', padding: 'var(--space-md)' }}
                     >
                         + Lägg till inkomst
                     </button>
-                </div>
+                </>
             )}
 
             {activeTab === 'categories' && (
@@ -358,6 +405,7 @@ function App() {
                 <IncomeModal
                     income={editingIncome}
                     settings={settings}
+                    currentMonth={currentMonth}
                     onSave={handleSaveIncome}
                     onClose={() => { setShowIncomeModal(false); setEditingIncome(null); }}
                 />

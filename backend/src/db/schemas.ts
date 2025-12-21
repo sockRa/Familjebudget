@@ -9,6 +9,8 @@ export const IncomeSchema = z.object({
     name: z.string().min(1),
     owner: z.string().min(1),
     amount: z.number().nonnegative(),
+    income_type: z.enum(['fixed', 'variable']),
+    year_month: z.number().nullable().optional(),
 });
 
 export const ExpenseSchema = z.object({

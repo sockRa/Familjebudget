@@ -36,10 +36,11 @@ describe('Database operations', () => {
 
     describe('Incomes', () => {
         it('should create and get incomes', () => {
-            const inc = createIncome('Salary', 'jag', 5000);
+            const inc = createIncome('Salary', 'jag', 5000, 'fixed', null);
             expect(inc.id).toBeTypeOf('number');
             expect(inc.name).toBe('Salary');
             expect(inc.amount).toBe(5000);
+            expect(inc.income_type).toBe('fixed');
 
             const all = getIncomes() as any[];
             expect(all).toHaveLength(1);
@@ -48,7 +49,7 @@ describe('Database operations', () => {
         });
 
         it('should update and delete incomes', () => {
-            const inc = createIncome('Old', 'fruga', 1000);
+            const inc = createIncome('Old', 'fruga', 1000, 'fixed', null);
             deleteIncome(Number(inc.id));
             expect(getIncomes()).toHaveLength(0);
         });
