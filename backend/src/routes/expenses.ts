@@ -45,7 +45,7 @@ router.delete('/:id', (req: Request, res: Response) => {
 });
 
 // Create override for a fixed expense (monthly copy)
-router.post('/:id/override', (req: Request, res: Response) => {
+router.post('/:id/override', validate(ExpenseUpdateSchema), (req: Request, res: Response) => {
     const originalId = parseInt(req.params.id);
     const { year_month, ...overrideData } = req.body;
 
@@ -53,8 +53,12 @@ router.post('/:id/override', (req: Request, res: Response) => {
         return res.status(400).json({ error: 'year_month is required for override' });
     }
 
-    const override = db.createExpenseOverride(originalId, year_month, overrideData);
-    res.status(201).json(override);
+    try {
+        const override = db.createExpenseOverride(originalId, year_month, overrideData);
+        res.status(201).json(override);
+    } catch (err: any) {
+        res.status(400).json({ error: err.message });
+    }
 });
 
 export default router;

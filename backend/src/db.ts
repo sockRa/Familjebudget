@@ -123,15 +123,14 @@ export function getExpenseById(id: number) {
   `).get(id);
 }
 
-export function createExpense(data: any) {
-  // Capitalize first letter of name
-  const capitalizedName = data.name.charAt(0).toUpperCase() + data.name.slice(1);
+const capitalizedName = (name: string) => name.charAt(0).toUpperCase() + name.slice(1);
 
+export function createExpense(data: any) {
   const result = db.prepare(`
     INSERT INTO expenses (name, amount, category_id, expense_type, payment_method, payment_status, year_month, created_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
-    capitalizedName,
+    capitalizedName(data.name),
     data.amount,
     data.category_id ?? null,
     data.expense_type,
@@ -180,19 +179,23 @@ export function createExpenseOverride(originalExpenseId: number, yearMonth: numb
     return updateExpense(existing.id, overrideData);
   }
 
-  // Create new override - keep expense_type as 'fixed' so it shows in fixed section
-  const capitalizedName = overrideData.name ?
-    overrideData.name.charAt(0).toUpperCase() + overrideData.name.slice(1) :
-    null;
+  // Get original expense to inherit name/category if not provided
+  const original = getExpenseById(originalExpenseId) as any;
+  if (!original) throw new Error('Original expense not found');
 
+  const finalName = overrideData.name || original.name;
+  const finalCategoryId = overrideData.category_id !== undefined ? overrideData.category_id : original.category_id;
+  const finalPaymentMethod = overrideData.payment_method || original.payment_method;
+
+  // Create new override - keep expense_type as 'fixed' so it shows in fixed section
   const result = db.prepare(`
     INSERT INTO expenses (name, amount, category_id, expense_type, payment_method, payment_status, year_month, overrides_expense_id, created_at)
     VALUES (?, ?, ?, 'fixed', ?, ?, ?, ?, ?)
   `).run(
-    capitalizedName || overrideData.name,
+    capitalizedName(finalName),
     overrideData.amount,
-    overrideData.category_id ?? null,
-    overrideData.payment_method,
+    finalCategoryId,
+    finalPaymentMethod,
     overrideData.payment_status || 'unpaid',
     yearMonth,
     originalExpenseId,

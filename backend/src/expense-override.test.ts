@@ -172,5 +172,27 @@ describe('Expense Override System', () => {
             expect(feb.amount).toBe(500);
             expect(may.amount).toBe(800);
         });
+
+        it('should inherit name and category if not provided in override', () => {
+            // Create category first
+            const catResult = db.prepare('INSERT INTO categories (name, color) VALUES (?, ?)').run('TestCat', '#ff0000');
+            const category_id = Number(catResult.lastInsertRowid);
+
+            const original = createExpense({
+                name: 'Gym',
+                amount: 399,
+                category_id: category_id,
+                expense_type: 'fixed',
+                payment_method: 'efaktura'
+            }) as Expense;
+
+            const override = createExpenseOverride(original.id, 202606, {
+                amount: 450
+            }) as any;
+
+            expect(override.name).toBe('Gym');
+            expect(override.category_id).toBe(1);
+            expect(override.payment_method).toBe('efaktura');
+        });
     });
 });

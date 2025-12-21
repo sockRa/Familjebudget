@@ -101,6 +101,10 @@ export function formatYearMonth(yearMonth: number): string {
     return date.toLocaleDateString('sv-SE', { year: 'numeric', month: 'long' });
 }
 
+export function isCurrentMonth(yearMonth: number): boolean {
+    return yearMonth === getCurrentYearMonth();
+}
+
 export function getCurrentYearMonth(): number {
     const now = new Date();
     return now.getFullYear() * 100 + (now.getMonth() + 1);

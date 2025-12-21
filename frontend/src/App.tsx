@@ -55,6 +55,7 @@ function App() {
     const [showIncomeModal, setShowIncomeModal] = useState(false);
     const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
     const [editingIncome, setEditingIncome] = useState<Income | null>(null);
+    const [error, setError] = useState<string | null>(null);
 
     // Theme effect
     useEffect(() => {
@@ -64,6 +65,7 @@ function App() {
 
     // Load data
     const loadData = useCallback(async () => {
+        setError(null);
         try {
             const [cats, incs, exps, ov] = await Promise.all([
                 categoriesApi.getAll(),
@@ -75,10 +77,21 @@ function App() {
             setIncomes(incs);
             setExpenses(exps);
             setOverview(ov);
-        } catch (err) {
+        } catch (err: any) {
             console.error('Failed to load data:', err);
+            setError('Kunde inte ladda data. Försök igen senare.');
         }
     }, [currentMonth]);
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (showExpenseModal || showIncomeModal) return;
+            if (e.key === 'ArrowLeft') setCurrentMonth(m => addMonths(m, -1));
+            if (e.key === 'ArrowRight') setCurrentMonth(m => addMonths(m, 1));
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [showExpenseModal, showIncomeModal]);
 
     useEffect(() => {
         loadData();
@@ -122,8 +135,9 @@ function App() {
             setShowExpenseModal(false);
             setEditingExpense(null);
             loadData();
-        } catch (err) {
+        } catch (err: any) {
             console.error('Failed to save expense:', err);
+            setError(err.message || 'Kunde inte spara utgift.');
         }
     };
 
@@ -185,7 +199,18 @@ function App() {
                         <button className="btn btn-secondary" onClick={() => setCurrentMonth(m => addMonths(m, -1))}>
                             ◀
                         </button>
-                        <span className="current-month">{formatYearMonth(currentMonth)}</span>
+                        <div className="current-month-container">
+                            <span className="current-month">{formatYearMonth(currentMonth)}</span>
+                            {currentMonth !== getCurrentYearMonth() && (
+                                <button
+                                    className="btn btn-today"
+                                    onClick={() => setCurrentMonth(getCurrentYearMonth())}
+                                    title="Gå till nuvarande månad"
+                                >
+                                    Idag
+                                </button>
+                            )}
+                        </div>
                         <button className="btn btn-secondary" onClick={() => setCurrentMonth(m => addMonths(m, 1))}>
                             ▶
                         </button>
@@ -199,6 +224,13 @@ function App() {
                     </button>
                 </div>
             </header>
+
+            {error && (
+                <div className="error-banner">
+                    <span>⚠️ {error}</span>
+                    <button onClick={() => setError(null)}>✕</button>
+                </div>
+            )}
 
             <div className="tabs">
                 <button className={`tab ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')}>

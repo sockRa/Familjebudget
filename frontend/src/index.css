@@ -231,6 +231,7 @@ body {
   font-family: var(--font-mono);
   font-weight: 600;
   font-size: var(--text-lg);
+  color: var(--color-primary);
 }
 
 /* ========================================
@@ -286,6 +287,7 @@ body {
 
 .expense-item:hover {
   background-color: var(--color-border);
+  transform: translateX(4px);
 }
 
 .expense-status-btn {
@@ -434,6 +436,19 @@ body {
   border-radius: var(--radius-full);
 }
 
+.btn-today {
+  padding: 2px 8px;
+  font-size: var(--text-xs);
+  background-color: var(--color-primary);
+  color: white;
+  border-radius: var(--radius-sm);
+  margin-top: 2px;
+}
+
+.btn-today:hover {
+  background-color: var(--color-primary-hover);
+}
+
 /* ========================================
    FORMS
    ======================================== */
@@ -578,6 +593,13 @@ body {
   text-align: center;
 }
 
+.current-month-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 160px;
+}
+
 /* ========================================
    THEME TOGGLE
    ======================================== */
@@ -654,6 +676,12 @@ body {
   padding: var(--space-md);
   background-color: var(--color-bg-tertiary);
   border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+}
+
+.income-item:hover {
+  background-color: var(--color-border);
+  transform: translateX(4px);
 }
 
 .income-owner {
@@ -686,6 +714,54 @@ body {
 .empty-state-icon {
   font-size: 3rem;
   margin-bottom: var(--space-md);
+}
+
+/* ========================================
+   ERROR BANNER
+   ======================================== */
+
+.error-banner {
+  background-color: #fef2f2;
+  border: 1px solid #fee2e2;
+  color: #991b1b;
+  padding: var(--space-md) var(--space-lg);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-lg);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  animation: slideDown var(--transition-base);
+}
+
+[data-theme="dark"] .error-banner {
+  background-color: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.2);
+  color: #fecaca;
+}
+
+.error-banner button {
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 1.2rem;
+  opacity: 0.7;
+}
+
+.error-banner button:hover {
+  opacity: 1;
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 /* ========================================
