@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { createExpense, createExpenseOverride, getExpenses } from './db';
-import db from './db/sqlite';
+import { createExpense, createExpenseOverride, getExpenses } from './db.js';
+import db from './db/sqlite.js';
 
 describe('Regression: Overview Override Calculation', () => {
     beforeEach(() => {
