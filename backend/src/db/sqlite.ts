@@ -19,7 +19,7 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS categories (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
-    color TEXT NOT NULL
+    color TEXT
   );
 
   CREATE TABLE IF NOT EXISTS incomes (

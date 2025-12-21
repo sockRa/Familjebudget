@@ -191,7 +191,7 @@ describe('Expense Override System', () => {
             }) as any;
 
             expect(override.name).toBe('Gym');
-            expect(override.category_id).toBe(1);
+            expect(override.category_id).toBe(category_id);
             expect(override.payment_method).toBe('efaktura');
         });
     });

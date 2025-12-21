@@ -193,6 +193,38 @@ body {
   font-family: var(--font-mono);
 }
 
+.stat-small {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding: var(--space-sm);
+}
+
+.stat-small .label {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.stat-small .label.blue {
+  color: var(--color-autogiro-jag);
+}
+
+.stat-small .label.pink {
+  color: var(--color-autogiro-fruga);
+}
+
+.stat-small .label.green {
+  color: var(--color-autogiro-gemensamt);
+}
+
+.stat-small .value {
+  font-size: var(--text-lg);
+  font-weight: 700;
+  font-family: var(--font-mono);
+}
+
 /* Transfer box */
 .transfer-box {
   background: linear-gradient(135deg, rgba(20, 184, 166, 0.1) 0%, rgba(20, 184, 166, 0.05) 100%);

@@ -41,6 +41,41 @@ export function calculateExpensesByPaymentMethod(
 }
 
 /**
+ * Calculate expenses grouped by person
+ */
+export function calculateExpensesByPerson(
+    expenses: Expense[],
+    yearMonth: number
+): { jag: number; fruga: number; gemensamt: number } {
+    const result = {
+        jag: 0,
+        fruga: 0,
+        gemensamt: 0,
+    };
+
+    expenses
+        .filter(e => e.expense_type === 'fixed' || e.year_month === yearMonth)
+        .forEach(expense => {
+            if (expense.payment_method === 'autogiro_jag') {
+                result.jag += expense.amount;
+            } else if (expense.payment_method === 'autogiro_fruga') {
+                result.fruga += expense.amount;
+            } else if (expense.payment_method === 'autogiro_gemensamt') {
+                result.gemensamt += expense.amount;
+            } else {
+                // E-faktura or other generic methods go to gemensamt or are handled specifically?
+                // For now, let's keep efaktura as its own or group with gemensamt?
+                // User probably wants to know who pays the e-faktura too if it's personal.
+                // But without 'owner' field, we can't know for sure.
+                // Let's count them as 'gemensamt' for now or 'ospecificerat' if we add a field.
+                result.gemensamt += expense.amount;
+            }
+        });
+
+    return result;
+}
+
+/**
  * Calculate how much each person needs to transfer to the joint account
  * Split is 50/50 by default
  */
@@ -71,6 +106,7 @@ export function calculateMonthlyOverview(
     const totalIncome = calculateTotalIncome(incomes);
     const totalExpenses = calculateTotalExpenses(expenses, yearMonth);
     const expensesByPaymentMethod = calculateExpensesByPaymentMethod(expenses, yearMonth);
+    const expensesByPerson = calculateExpensesByPerson(expenses, yearMonth);
     const transferToJoint = calculateTransferToJoint(expenses, yearMonth);
 
     return {
@@ -80,6 +116,7 @@ export function calculateMonthlyOverview(
         balance: totalIncome - totalExpenses,
         transferToJoint,
         expensesByPaymentMethod,
+        expensesByPerson,
     };
 }
 

@@ -15,7 +15,6 @@ export type PaymentStatus = 'unpaid' | 'pending' | 'paid';
 export interface Category {
     id: number;
     name: string;
-    color: string;
 }
 
 export interface Income {
@@ -32,7 +31,6 @@ export interface Expense {
     amount: number;
     category_id: number | null;
     category_name?: string;
-    category_color?: string;
     expense_type: ExpenseType;
     payment_method: PaymentMethod;
     payment_status: PaymentStatus;
@@ -51,6 +49,11 @@ export interface MonthlyOverview {
         fruga: number;
     };
     expensesByPaymentMethod: Record<PaymentMethod, number>;
+    expensesByPerson: {
+        jag: number;
+        fruga: number;
+        gemensamt: number;
+    };
 }
 
 // Helper functions

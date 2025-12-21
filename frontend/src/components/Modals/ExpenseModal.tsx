@@ -36,7 +36,6 @@ export function ExpenseModal({
     // New category creation
     const [showNewCategory, setShowNewCategory] = useState(false);
     const [newCategoryName, setNewCategoryName] = useState('');
-    const [newCategoryColor, setNewCategoryColor] = useState('#6366f1');
     const [isCreatingCategory, setIsCreatingCategory] = useState(false);
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -59,7 +58,6 @@ export function ExpenseModal({
         try {
             const newCategory = await categoriesApi.create({
                 name: newCategoryName.trim(),
-                color: newCategoryColor
             });
             setCategoryId(newCategory.id.toString());
             setShowNewCategory(false);
@@ -150,12 +148,6 @@ export function ExpenseModal({
                                             value={newCategoryName}
                                             onChange={e => setNewCategoryName(e.target.value)}
                                             style={{ flex: 1, minWidth: '120px' }}
-                                        />
-                                        <input
-                                            type="color"
-                                            value={newCategoryColor}
-                                            onChange={e => setNewCategoryColor(e.target.value)}
-                                            style={{ width: '40px', padding: '2px', cursor: 'pointer' }}
                                         />
                                         <button
                                             type="button"

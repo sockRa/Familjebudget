@@ -12,7 +12,7 @@ router.get('/', (req: Request, res: Response) => {
 
 // Create category
 router.post('/', validate(CategorySchema), (req: Request, res: Response) => {
-    const { name, color } = req.body;
+    const { name } = req.body;
 
     // Check for duplicate
     const existing = db.getCategories().find((c: any) => c.name.toLowerCase() === name.toLowerCase());
@@ -20,7 +20,7 @@ router.post('/', validate(CategorySchema), (req: Request, res: Response) => {
         return res.status(400).json({ error: 'Category already exists' });
     }
 
-    const category = db.createCategory(name, color);
+    const category = db.createCategory(name);
     res.status(201).json(category);
 });
 

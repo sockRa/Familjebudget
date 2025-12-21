@@ -249,7 +249,7 @@ function App() {
 
             {activeTab === 'overview' && overview && (
                 <>
-                    <SummaryCards overview={overview} />
+                    <SummaryCards overview={overview} settings={settings} />
 
                     {/* Fixed expenses */}
                     <div className="expense-section">

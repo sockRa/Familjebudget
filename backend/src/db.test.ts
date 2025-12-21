@@ -18,7 +18,7 @@ describe('Database operations', () => {
 
     describe('Categories', () => {
         it('should create and get categories', () => {
-            const cat = createCategory('Test Cat', '#ff0000');
+            const cat = createCategory('Test Cat');
             expect(cat.id).toBeTypeOf('number');
             expect(cat.name).toBe('Test Cat');
 
@@ -28,7 +28,7 @@ describe('Database operations', () => {
         });
 
         it('should delete categories', () => {
-            const cat = createCategory('To Delete', '#00ff00');
+            const cat = createCategory('To Delete');
             deleteCategory(Number(cat.id));
             expect(getCategories()).toHaveLength(0);
         });
@@ -57,7 +57,7 @@ describe('Database operations', () => {
 
     describe('Expenses', () => {
         it('should create and get expenses', () => {
-            const cat = createCategory('Food', '#0000ff');
+            const cat = createCategory('Food');
             const exp = createExpense({
                 name: 'Grocery',
                 amount: 200,

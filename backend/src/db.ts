@@ -10,16 +10,15 @@ export function getCategoryById(id: number) {
   return db.prepare('SELECT * FROM categories WHERE id = ?').get(id);
 }
 
-export function createCategory(name: string, color: string) {
-  const result = db.prepare('INSERT INTO categories (name, color) VALUES (?, ?)').run(name, color);
-  return { id: Number(result.lastInsertRowid), name, color };
+export function createCategory(name: string) {
+  const result = db.prepare('INSERT INTO categories (name) VALUES (?)').run(name);
+  return { id: Number(result.lastInsertRowid), name };
 }
 
-export function updateCategory(id: number, updates: { name?: string; color?: string }) {
+export function updateCategory(id: number, updates: { name?: string }) {
   const sets = [];
   const params = [];
   if (updates.name !== undefined) { sets.push('name = ?'); params.push(updates.name); }
-  if (updates.color !== undefined) { sets.push('color = ?'); params.push(updates.color); }
 
   if (sets.length > 0) {
     params.push(id);
@@ -85,7 +84,7 @@ export function getExpenses(yearMonth?: number) {
   if (!yearMonth) {
     // No month specified - return all expenses (for admin purposes)
     return db.prepare(`
-      SELECT e.*, c.name as category_name, c.color as category_color
+      SELECT e.*, c.name as category_name
       FROM expenses e
       LEFT JOIN categories c ON e.category_id = c.id
       ORDER BY e.expense_type = 'fixed' DESC, e.payment_method, e.name COLLATE NOCASE
@@ -97,7 +96,7 @@ export function getExpenses(yearMonth?: number) {
   // 2. Variable expenses for this month (not overrides)
   // 3. Overrides for this month (have overrides_expense_id set)
   const query = `
-    SELECT e.*, c.name as category_name, c.color as category_color
+    SELECT e.*, c.name as category_name
     FROM expenses e
     LEFT JOIN categories c ON e.category_id = c.id
     WHERE 
@@ -116,7 +115,7 @@ export function getExpenses(yearMonth?: number) {
 
 export function getExpenseById(id: number) {
   return db.prepare(`
-    SELECT e.*, c.name as category_name, c.color as category_color
+    SELECT e.*, c.name as category_name
     FROM expenses e
     LEFT JOIN categories c ON e.category_id = c.id
     WHERE e.id = ?

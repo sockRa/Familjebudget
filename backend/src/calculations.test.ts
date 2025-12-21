@@ -5,6 +5,7 @@ import {
     calculateExpensesByPaymentMethod,
     calculateTransferToJoint,
     calculateMonthlyOverview,
+    calculateExpensesByPerson,
     getExpensesForMonth,
 } from './calculations.js';
 import type { Income, Expense } from './types.js';
@@ -66,6 +67,20 @@ describe('calculateExpensesByPaymentMethod', () => {
     });
 });
 
+describe('calculateExpensesByPerson', () => {
+    it('should group expenses correctly for December 2024', () => {
+        const result = calculateExpensesByPerson(mockExpenses, 202412);
+        expect(result.jag).toBe(179);
+        expect(result.fruga).toBe(169);
+        expect(result.gemensamt).toBe(15800); // 12000 (joint) + 800 (efaktura) + 3000 (efaktura)
+    });
+
+    it('should include variable joint expenses for the correct month', () => {
+        const result = calculateExpensesByPerson(mockExpenses, 202501);
+        expect(result.gemensamt).toBe(13300); // 12000 + 800 + 500
+    });
+});
+
 describe('calculateTransferToJoint', () => {
     it('should split joint account expenses 50/50 by default', () => {
         const result = calculateTransferToJoint(mockExpenses, 202412);
@@ -96,6 +111,9 @@ describe('calculateMonthlyOverview', () => {
         expect(result.balance).toBe(40102);
         expect(result.transferToJoint.jag).toBe(6000);
         expect(result.transferToJoint.fruga).toBe(6000);
+        expect(result.expensesByPerson.jag).toBe(179);
+        expect(result.expensesByPerson.fruga).toBe(169);
+        expect(result.expensesByPerson.gemensamt).toBe(15800);
     });
 });
 

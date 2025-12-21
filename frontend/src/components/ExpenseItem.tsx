@@ -53,10 +53,7 @@ export function ExpenseItem({
                         {getPaymentMethodLabel()}
                     </span>
                     {expense.category_name && (
-                        <span
-                            className="expense-category"
-                            style={{ backgroundColor: `${expense.category_color}20`, color: expense.category_color }}
-                        >
+                        <span className="expense-category">
                             {expense.category_name}
                         </span>
                     )}
