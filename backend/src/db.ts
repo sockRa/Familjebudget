@@ -92,21 +92,22 @@ export function getExpenses(yearMonth?: number) {
     `).all();
   }
 
-  // Get fixed expenses that DON'T have an override for this month
-  // Plus variable expenses for this month
-  // Plus overrides for this month
+  // Get:
+  // 1. Fixed expenses that DON'T have an override for this month (and aren't overrides themselves)
+  // 2. Variable expenses for this month (not overrides)
+  // 3. Overrides for this month (have overrides_expense_id set)
   const query = `
     SELECT e.*, c.name as category_name, c.color as category_color
     FROM expenses e
     LEFT JOIN categories c ON e.category_id = c.id
     WHERE 
-      -- Fixed expenses without an override for this month
-      (e.expense_type = 'fixed' AND e.overrides_expense_id IS NULL 
+      -- Fixed expenses without an override for this month (and not an override itself)
+      (e.expense_type = 'fixed' AND e.overrides_expense_id IS NULL AND e.year_month IS NULL
        AND e.id NOT IN (SELECT overrides_expense_id FROM expenses WHERE year_month = ? AND overrides_expense_id IS NOT NULL))
-      -- Variable expenses for this month
+      -- Variable expenses for this month (not overrides)
       OR (e.expense_type = 'variable' AND e.year_month = ? AND e.overrides_expense_id IS NULL)
-      -- Overrides for this month
-      OR (e.overrides_expense_id IS NOT NULL AND e.year_month = ?)
+      -- Fixed overrides for this month
+      OR (e.expense_type = 'fixed' AND e.overrides_expense_id IS NOT NULL AND e.year_month = ?)
     ORDER BY e.expense_type = 'fixed' DESC, e.payment_method, e.name COLLATE NOCASE
   `;
 
@@ -179,14 +180,14 @@ export function createExpenseOverride(originalExpenseId: number, yearMonth: numb
     return updateExpense(existing.id, overrideData);
   }
 
-  // Create new override
+  // Create new override - keep expense_type as 'fixed' so it shows in fixed section
   const capitalizedName = overrideData.name ?
     overrideData.name.charAt(0).toUpperCase() + overrideData.name.slice(1) :
     null;
 
   const result = db.prepare(`
     INSERT INTO expenses (name, amount, category_id, expense_type, payment_method, payment_status, year_month, overrides_expense_id, created_at)
-    VALUES (?, ?, ?, 'variable', ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, 'fixed', ?, ?, ?, ?, ?)
   `).run(
     capitalizedName || overrideData.name,
     overrideData.amount,
