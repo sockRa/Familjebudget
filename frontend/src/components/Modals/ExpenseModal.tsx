@@ -175,7 +175,6 @@ export function ExpenseModal({
                                 value={paymentMethod}
                                 onChange={e => setPaymentMethod(e.target.value as any)}
                             >
-                                <option value="efaktura">📧 E-faktura (Gammal)</option>
                                 <option value="efaktura_jag">📧 E-faktura ({settings.person1Name})</option>
                                 <option value="efaktura_fruga">📧 E-faktura ({settings.person2Name})</option>
                                 <option value="efaktura_gemensamt">📧 E-faktura (Gemensamt)</option>

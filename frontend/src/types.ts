@@ -3,7 +3,6 @@
 export type Owner = 'jag' | 'fruga';
 
 export type PaymentMethod =
-    | 'efaktura'
     | 'efaktura_jag'
     | 'efaktura_fruga'
     | 'efaktura_gemensamt'
@@ -60,18 +59,19 @@ export interface MonthlyOverview {
 }
 
 // Helper functions
-export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
-    efaktura: 'E-faktura',
-    efaktura_jag: 'E-faktura (Jag)',
-    efaktura_fruga: 'E-faktura (Fruga)',
-    efaktura_gemensamt: 'E-faktura (Gemensamt)',
-    autogiro_jag: 'Autogiro (Jag)',
-    autogiro_fruga: 'Autogiro (Fruga)',
-    autogiro_gemensamt: 'Autogiro (Gemensamt)',
+export const getPaymentMethodLabel = (method: PaymentMethod, settings: { person1Name: string; person2Name: string }) => {
+    const labels: Record<PaymentMethod, string> = {
+        efaktura_jag: `E-faktura (${settings.person1Name})`,
+        efaktura_fruga: `E-faktura (${settings.person2Name})`,
+        efaktura_gemensamt: 'E-faktura (Gemensamt)',
+        autogiro_jag: `Autogiro (${settings.person1Name})`,
+        autogiro_fruga: `Autogiro (${settings.person2Name})`,
+        autogiro_gemensamt: 'Autogiro (Gemensamt)',
+    };
+    return labels[method] || method;
 };
 
 export const PAYMENT_METHOD_ICONS: Record<PaymentMethod, string> = {
-    efaktura: '📄',
     efaktura_jag: '📄🔵',
     efaktura_fruga: '📄🟣',
     efaktura_gemensamt: '📄🟢',
@@ -80,9 +80,8 @@ export const PAYMENT_METHOD_ICONS: Record<PaymentMethod, string> = {
     autogiro_gemensamt: '🟢',
 };
 
-export const OWNER_LABELS: Record<Owner, string> = {
-    jag: 'Jag',
-    fruga: 'Fruga',
+export const getOwnerLabel = (owner: Owner, settings: { person1Name: string; person2Name: string }) => {
+    return owner === 'jag' ? settings.person1Name : settings.person2Name;
 };
 
 export const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {

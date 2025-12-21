@@ -1,4 +1,4 @@
-import { Expense, PaymentStatus, PAYMENT_STATUS_ICONS, formatCurrency } from '../types';
+import { Expense, PaymentStatus, PAYMENT_STATUS_ICONS, formatCurrency, getPaymentMethodLabel } from '../types';
 
 interface Settings {
     person1Name: string;
@@ -27,18 +27,6 @@ export function ExpenseItem({
         onToggleStatus(expense.id, nextStatus);
     };
 
-    const getPaymentMethodLabel = () => {
-        switch (expense.payment_method) {
-            case 'efaktura': return 'E-faktura';
-            case 'efaktura_jag': return `Elec. (${settings.person1Name})`;
-            case 'efaktura_fruga': return `Elec. (${settings.person2Name})`;
-            case 'efaktura_gemensamt': return 'Elec. (Gem.)';
-            case 'autogiro_jag': return settings.person1Name;
-            case 'autogiro_fruga': return settings.person2Name;
-            case 'autogiro_gemensamt': return 'Gemensamt';
-            default: return expense.payment_method;
-        }
-    };
 
     return (
         <div className="expense-item">
@@ -53,7 +41,7 @@ export function ExpenseItem({
                 <span className="expense-name">{expense.name}</span>
                 <div className="expense-meta">
                     <span className={`payment-chip ${expense.payment_method}`}>
-                        {getPaymentMethodLabel()}
+                        {getPaymentMethodLabel(expense.payment_method, settings)}
                     </span>
                     {expense.category_name && (
                         <span className="expense-category">

@@ -14,12 +14,7 @@ router.get('/:yearMonth', (req: Request, res: Response) => {
   }
 
   const incomes = db.getIncomes(yearMonth) as Income[];
-  const allExpenses = db.getAllExpenses();
-
-  // Filter expenses for the month
-  const expenses = allExpenses.filter((e: any) =>
-    e.expense_type === 'fixed' || e.year_month === yearMonth
-  ) as Expense[];
+  const expenses = db.getExpenses(yearMonth) as Expense[];
 
   const overview = calculateMonthlyOverview(incomes, expenses, yearMonth);
   res.json(overview);

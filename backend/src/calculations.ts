@@ -25,7 +25,6 @@ export function calculateExpensesByPaymentMethod(
     yearMonth: number
 ): Record<PaymentMethod, number> {
     const result: Record<PaymentMethod, number> = {
-        efaktura: 0,
         efaktura_jag: 0,
         efaktura_fruga: 0,
         efaktura_gemensamt: 0,
@@ -67,7 +66,7 @@ export function calculateExpensesByPerson(
             } else if (expense.payment_method === 'autogiro_gemensamt' || expense.payment_method === 'efaktura_gemensamt') {
                 result.gemensamt += expense.amount;
             } else {
-                // 'efaktura' (legacy) or other generic methods go to gemensamt
+                // Should not happen if types are followed, but fallback for safety
                 result.gemensamt += expense.amount;
             }
         });
@@ -86,7 +85,7 @@ export function calculateTransferToJoint(
 ): { jag: number; fruga: number } {
     const jointTotal = expenses
         .filter(e => e.expense_type === 'fixed' || e.year_month === yearMonth)
-        .filter(e => e.payment_method === 'autogiro_gemensamt' || e.payment_method === 'efaktura_gemensamt' || e.payment_method === 'efaktura')
+        .filter(e => e.payment_method === 'autogiro_gemensamt' || e.payment_method === 'efaktura_gemensamt')
         .reduce((sum, e) => sum + e.amount, 0);
 
     return {

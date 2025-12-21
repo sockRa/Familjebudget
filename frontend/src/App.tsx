@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import {
     Category, Income, Expense, MonthlyOverview, PaymentStatus,
     formatCurrency, formatYearMonth, getCurrentYearMonth, addMonths,
-    PAYMENT_METHOD_LABELS
+    getPaymentMethodLabel, getOwnerLabel
 } from './types';
 import { categoriesApi, incomesApi, expensesApi, overviewApi } from './api';
 
@@ -98,8 +98,6 @@ function App() {
     }, [loadData]);
 
     // Helpers
-    const getOwnerLabel = (owner: string) =>
-        owner === 'jag' ? settings.person1Name : settings.person2Name;
 
     const fixedExpenses = expenses.filter(e => e.expense_type === 'fixed');
     const variableExpenses = expenses.filter(e => e.expense_type === 'variable');
@@ -267,7 +265,7 @@ function App() {
                                     marginBottom: 'var(--space-xs)',
                                     paddingLeft: 'var(--space-sm)'
                                 }}>
-                                    {PAYMENT_METHOD_LABELS[method as keyof typeof PAYMENT_METHOD_LABELS]}
+                                    {getPaymentMethodLabel(method as any, settings)}
                                 </div>
                                 <div className="expense-list">
                                     {exps.map(expense => (
@@ -341,7 +339,7 @@ function App() {
                         {incomes.map(income => (
                             <div key={income.id} className="income-item">
                                 <span className={`income-owner ${income.owner}`}>
-                                    {getOwnerLabel(income.owner)}
+                                    {getOwnerLabel(income.owner as any, settings)}
                                 </span>
                                 <span className="expense-name">{income.name}</span>
                                 <span className="expense-amount">{formatCurrency(income.amount)}</span>
