@@ -21,10 +21,13 @@
   --color-danger: #ef4444;
 
   /* Payment method colors */
-  --color-efaktura: #8b5cf6;
   --color-autogiro-jag: #3b82f6;
   --color-autogiro-fruga: #ec4899;
-  --color-autogiro-gemensamt: #14b8a6;
+  --color-autogiro-gemensamt: #10b981;
+  --color-efaktura: #6366f1;
+  --color-efaktura-jag: #0ea5e9;
+  --color-efaktura-fruga: #db2777;
+  --color-efaktura-gemensamt: #059669;
 
   /* Category colors (defaults) */
   --color-category-boende: #ef4444;
@@ -366,18 +369,33 @@ body {
   color: var(--color-efaktura);
 }
 
+.payment-chip.efaktura_jag {
+  background-color: rgba(14, 165, 233, 0.1);
+  color: var(--color-efaktura-jag);
+}
+
+.payment-chip.efaktura_fruga {
+  background-color: rgba(219, 39, 119, 0.1);
+  color: var(--color-efaktura-fruga);
+}
+
+.payment-chip.efaktura_gemensamt {
+  background-color: rgba(5, 150, 105, 0.1);
+  color: var(--color-efaktura-gemensamt);
+}
+
 .payment-chip.autogiro_jag {
-  background-color: rgba(59, 130, 246, 0.15);
+  background-color: rgba(30, 64, 175, 0.1);
   color: var(--color-autogiro-jag);
 }
 
 .payment-chip.autogiro_fruga {
-  background-color: rgba(236, 72, 153, 0.15);
+  background-color: rgba(157, 23, 77, 0.1);
   color: var(--color-autogiro-fruga);
 }
 
 .payment-chip.autogiro_gemensamt {
-  background-color: rgba(20, 184, 166, 0.15);
+  background-color: rgba(6, 78, 59, 0.1);
   color: var(--color-autogiro-gemensamt);
 }
 

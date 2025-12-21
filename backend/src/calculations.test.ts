@@ -23,9 +23,9 @@ const mockExpenses: Expense[] = [
     { id: 3, name: 'Spotify', amount: 179, category_id: 4, expense_type: 'fixed', payment_method: 'autogiro_jag', payment_status: 'paid', year_month: null, created_at: '' },
     { id: 4, name: 'Netflix', amount: 169, category_id: 4, expense_type: 'fixed', payment_method: 'autogiro_fruga', payment_status: 'paid', year_month: null, created_at: '' },
     // Variable expenses for December 2024
-    { id: 5, name: 'Julklappar', amount: 3000, category_id: 6, expense_type: 'variable', payment_method: 'efaktura', payment_status: 'pending', year_month: 202412, created_at: '' },
+    { id: 5, name: 'Julklappar', amount: 3000, category_id: 6, expense_type: 'variable', payment_method: 'efaktura_jag', payment_status: 'pending', year_month: 202412, created_at: '' },
     // Variable expenses for January 2025
-    { id: 6, name: 'Nyårsfest', amount: 500, category_id: 4, expense_type: 'variable', payment_method: 'autogiro_gemensamt', payment_status: 'unpaid', year_month: 202501, created_at: '' },
+    { id: 6, name: 'Nyårsfest', amount: 500, category_id: 4, expense_type: 'variable', payment_method: 'efaktura_gemensamt', payment_status: 'unpaid', year_month: 202501, created_at: '' },
 ];
 
 describe('calculateTotalIncome', () => {
@@ -56,48 +56,55 @@ describe('calculateExpensesByPaymentMethod', () => {
     it('should group expenses correctly for December 2024', () => {
         const result = calculateExpensesByPaymentMethod(mockExpenses, 202412);
         expect(result.autogiro_gemensamt).toBe(12000);
-        expect(result.efaktura).toBe(3800); // 800 + 3000
+        expect(result.efaktura_jag).toBe(3000); // Julklappar
+        expect(result.efaktura).toBe(800); // El
         expect(result.autogiro_jag).toBe(179);
         expect(result.autogiro_fruga).toBe(169);
     });
 
     it('should include joint variable expenses for the correct month', () => {
         const result = calculateExpensesByPaymentMethod(mockExpenses, 202501);
-        expect(result.autogiro_gemensamt).toBe(12500); // 12000 + 500
+        expect(result.efaktura_gemensamt).toBe(500);
+        expect(result.autogiro_gemensamt).toBe(12000);
     });
 });
 
 describe('calculateExpensesByPerson', () => {
-    it('should group expenses correctly for December 2024', () => {
+    it('should group expenses correctly for December 2024 (excluding paid)', () => {
         const result = calculateExpensesByPerson(mockExpenses, 202412);
-        expect(result.jag).toBe(179);
-        expect(result.fruga).toBe(169);
-        expect(result.gemensamt).toBe(15800); // 12000 (joint) + 800 (efaktura) + 3000 (efaktura)
+        // Spotify (id: 3, paid) and Netflix (id: 4, paid) are EXCLUDED
+        // Julklappar (id: 5, pending, efaktura_jag) is INCLUDED for jag
+        expect(result.jag).toBe(3000);
+        expect(result.fruga).toBe(0);
+        expect(result.gemensamt).toBe(12800); // 12000 (joint autogiro) + 800 (legacy efaktura)
     });
 
     it('should include variable joint expenses for the correct month', () => {
         const result = calculateExpensesByPerson(mockExpenses, 202501);
-        expect(result.gemensamt).toBe(13300); // 12000 + 800 + 500
+        expect(result.gemensamt).toBe(13300); // 12000 + 800 + 500 (efaktura_gemensamt)
     });
 });
 
 describe('calculateTransferToJoint', () => {
     it('should split joint account expenses 50/50 by default', () => {
         const result = calculateTransferToJoint(mockExpenses, 202412);
-        expect(result.jag).toBe(6000);
-        expect(result.fruga).toBe(6000);
+        // 12000 (joint autogiro) + 800 (legacy efaktura) = 12800
+        expect(result.jag).toBe(6400);
+        expect(result.fruga).toBe(6400);
     });
 
     it('should include variable joint expenses for the month', () => {
         const result = calculateTransferToJoint(mockExpenses, 202501);
-        expect(result.jag).toBe(6250); // (12000 + 500) / 2
-        expect(result.fruga).toBe(6250);
+        // 12000 (joint autogiro) + 800 (legacy efaktura) + 500 (efaktura_gemensamt) = 13300
+        expect(result.jag).toBe(6650);
+        expect(result.fruga).toBe(6650);
     });
 
     it('should respect custom split ratio', () => {
         const result = calculateTransferToJoint(mockExpenses, 202412, 0.6);
-        expect(result.jag).toBe(7200); // 12000 * 0.6
-        expect(result.fruga).toBe(4800); // 12000 * 0.4
+        // 12800 * 0.6 = 7680
+        expect(result.jag).toBe(7680);
+        expect(result.fruga).toBe(5120); // 12800 * 0.4
     });
 });
 
@@ -109,11 +116,11 @@ describe('calculateMonthlyOverview', () => {
         expect(result.totalIncome).toBe(56250);
         expect(result.totalExpenses).toBe(16148);
         expect(result.balance).toBe(40102);
-        expect(result.transferToJoint.jag).toBe(6000);
-        expect(result.transferToJoint.fruga).toBe(6000);
-        expect(result.expensesByPerson.jag).toBe(179);
-        expect(result.expensesByPerson.fruga).toBe(169);
-        expect(result.expensesByPerson.gemensamt).toBe(15800);
+        expect(result.transferToJoint.jag).toBe(6400);
+        expect(result.transferToJoint.fruga).toBe(6400);
+        expect(result.expensesByPerson.jag).toBe(3000); // Julklappar (efaktura_jag)
+        expect(result.expensesByPerson.fruga).toBe(0);
+        expect(result.expensesByPerson.gemensamt).toBe(12800);
     });
 });
 

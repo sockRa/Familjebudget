@@ -4,6 +4,9 @@ export type Owner = 'jag' | 'fruga';
 
 export type PaymentMethod =
     | 'efaktura'
+    | 'efaktura_jag'
+    | 'efaktura_fruga'
+    | 'efaktura_gemensamt'
     | 'autogiro_jag'
     | 'autogiro_fruga'
     | 'autogiro_gemensamt';

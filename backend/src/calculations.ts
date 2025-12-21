@@ -26,6 +26,9 @@ export function calculateExpensesByPaymentMethod(
 ): Record<PaymentMethod, number> {
     const result: Record<PaymentMethod, number> = {
         efaktura: 0,
+        efaktura_jag: 0,
+        efaktura_fruga: 0,
+        efaktura_gemensamt: 0,
         autogiro_jag: 0,
         autogiro_fruga: 0,
         autogiro_gemensamt: 0,
@@ -55,19 +58,16 @@ export function calculateExpensesByPerson(
 
     expenses
         .filter(e => e.expense_type === 'fixed' || e.year_month === yearMonth)
+        .filter(e => e.payment_status !== 'paid')
         .forEach(expense => {
-            if (expense.payment_method === 'autogiro_jag') {
+            if (expense.payment_method === 'autogiro_jag' || expense.payment_method === 'efaktura_jag') {
                 result.jag += expense.amount;
-            } else if (expense.payment_method === 'autogiro_fruga') {
+            } else if (expense.payment_method === 'autogiro_fruga' || expense.payment_method === 'efaktura_fruga') {
                 result.fruga += expense.amount;
-            } else if (expense.payment_method === 'autogiro_gemensamt') {
+            } else if (expense.payment_method === 'autogiro_gemensamt' || expense.payment_method === 'efaktura_gemensamt') {
                 result.gemensamt += expense.amount;
             } else {
-                // E-faktura or other generic methods go to gemensamt or are handled specifically?
-                // For now, let's keep efaktura as its own or group with gemensamt?
-                // User probably wants to know who pays the e-faktura too if it's personal.
-                // But without 'owner' field, we can't know for sure.
-                // Let's count them as 'gemensamt' for now or 'ospecificerat' if we add a field.
+                // 'efaktura' (legacy) or other generic methods go to gemensamt
                 result.gemensamt += expense.amount;
             }
         });
@@ -86,7 +86,7 @@ export function calculateTransferToJoint(
 ): { jag: number; fruga: number } {
     const jointTotal = expenses
         .filter(e => e.expense_type === 'fixed' || e.year_month === yearMonth)
-        .filter(e => e.payment_method === 'autogiro_gemensamt')
+        .filter(e => e.payment_method === 'autogiro_gemensamt' || e.payment_method === 'efaktura_gemensamt' || e.payment_method === 'efaktura')
         .reduce((sum, e) => sum + e.amount, 0);
 
     return {

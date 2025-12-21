@@ -4,6 +4,9 @@ export type Owner = 'jag' | 'fruga';
 
 export type PaymentMethod =
     | 'efaktura'
+    | 'efaktura_jag'
+    | 'efaktura_fruga'
+    | 'efaktura_gemensamt'
     | 'autogiro_jag'
     | 'autogiro_fruga'
     | 'autogiro_gemensamt';
@@ -59,6 +62,9 @@ export interface MonthlyOverview {
 // Helper functions
 export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
     efaktura: 'E-faktura',
+    efaktura_jag: 'E-faktura (Jag)',
+    efaktura_fruga: 'E-faktura (Fruga)',
+    efaktura_gemensamt: 'E-faktura (Gemensamt)',
     autogiro_jag: 'Autogiro (Jag)',
     autogiro_fruga: 'Autogiro (Fruga)',
     autogiro_gemensamt: 'Autogiro (Gemensamt)',
@@ -66,6 +72,9 @@ export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
 
 export const PAYMENT_METHOD_ICONS: Record<PaymentMethod, string> = {
     efaktura: '📄',
+    efaktura_jag: '📄🔵',
+    efaktura_fruga: '📄🟣',
+    efaktura_gemensamt: '📄🟢',
     autogiro_jag: '🔵',
     autogiro_fruga: '🟣',
     autogiro_gemensamt: '🟢',

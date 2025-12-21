@@ -30,6 +30,9 @@ export function ExpenseItem({
     const getPaymentMethodLabel = () => {
         switch (expense.payment_method) {
             case 'efaktura': return 'E-faktura';
+            case 'efaktura_jag': return `Elec. (${settings.person1Name})`;
+            case 'efaktura_fruga': return `Elec. (${settings.person2Name})`;
+            case 'efaktura_gemensamt': return 'Elec. (Gem.)';
             case 'autogiro_jag': return settings.person1Name;
             case 'autogiro_fruga': return settings.person2Name;
             case 'autogiro_gemensamt': return 'Gemensamt';

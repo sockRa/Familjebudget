@@ -28,7 +28,7 @@ export function SummaryCards({ overview, settings }: SummaryCardsProps) {
 
             <div className="card" style={{ marginBottom: 'var(--space-xl)' }}>
                 <div className="section-header">
-                    <span className="section-title">Utgifter per person</span>
+                    <span className="section-title">Kvar att betala per person</span>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 'var(--space-md)' }}>
                     <div className="stat-small">
