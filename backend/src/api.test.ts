@@ -27,14 +27,14 @@ describe('API Routes', () => {
                     name: 'Test Income',
                     owner: 'jag',
                     amount: 1000,
-                    income_type: 'fixed'
+                    year_month: 202312
                 });
 
             expect(res.status).toBe(201);
             expect(res.body.name).toBe('Test Income');
             expect(res.body.owner).toBe('jag');
             expect(res.body.amount).toBe(1000);
-            expect(res.body.income_type).toBe('fixed');
+            expect(res.body.year_month).toBe(202312);
             expect(typeof res.body.id).toBe('number');
         });
 
@@ -44,17 +44,18 @@ describe('API Routes', () => {
                 .send({
                     name: 'Bad Owner',
                     owner: 'someone_else',
-                    amount: 1000
+                    amount: 1000,
+                    year_month: 202312
                 });
 
             expect(res.status).toBe(400);
         });
 
         it('should get all incomes', async () => {
-            await request(app).post('/api/incomes').send({ name: 'I1', owner: 'jag', amount: 100, income_type: 'fixed' });
-            await request(app).post('/api/incomes').send({ name: 'I2', owner: 'fruga', amount: 200, income_type: 'fixed' });
+            await request(app).post('/api/incomes').send({ name: 'I1', owner: 'jag', amount: 100, year_month: 202312 });
+            await request(app).post('/api/incomes').send({ name: 'I2', owner: 'fruga', amount: 200, year_month: 202312 });
 
-            const res = await request(app).get('/api/incomes');
+            const res = await request(app).get('/api/incomes?yearMonth=202312');
             expect(res.status).toBe(200);
             expect(res.body).toHaveLength(2);
         });

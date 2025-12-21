@@ -18,15 +18,12 @@ export interface Category {
     color: string;
 }
 
-export type IncomeType = 'fixed' | 'variable';
-
 export interface Income {
     id: number;
     name: string;
     owner: Owner;
     amount: number;
-    income_type: IncomeType;
-    year_month: number | null;
+    year_month: number;
 }
 
 export interface Expense {

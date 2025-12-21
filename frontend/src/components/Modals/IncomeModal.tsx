@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Income, IncomeType, formatYearMonth } from '../../types';
+import { Income, formatYearMonth } from '../../types';
 
 interface Settings {
     person1Name: string;
@@ -10,7 +10,7 @@ interface IncomeModalProps {
     income: Income | null;
     settings: Settings;
     currentMonth: number;
-    onSave: (data: { name: string; owner: 'jag' | 'fruga'; amount: number; income_type: IncomeType; year_month?: number }) => void;
+    onSave: (data: { name: string; owner: 'jag' | 'fruga'; amount: number; year_month: number }) => void;
     onClose: () => void;
 }
 
@@ -24,7 +24,6 @@ export function IncomeModal({
     const [name, setName] = useState(income?.name || '');
     const [owner, setOwner] = useState<'jag' | 'fruga'>(income?.owner as 'jag' | 'fruga' || 'jag');
     const [amount, setAmount] = useState(income?.amount?.toString() || '');
-    const [incomeType, setIncomeType] = useState<IncomeType>(income?.income_type || 'fixed');
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -32,8 +31,7 @@ export function IncomeModal({
             name,
             owner,
             amount: parseFloat(amount),
-            income_type: incomeType,
-            year_month: incomeType === 'variable' ? currentMonth : undefined
+            year_month: currentMonth
         });
     };
 
@@ -83,21 +81,8 @@ export function IncomeModal({
                                 />
                             </div>
                         </div>
-                        <div className="form-group">
-                            <label className="form-label">Typ</label>
-                            <select
-                                className="form-select"
-                                value={incomeType}
-                                onChange={e => setIncomeType(e.target.value as IncomeType)}
-                            >
-                                <option value="fixed">Fast (varje månad)</option>
-                                <option value="variable">Variabel (endast denna månad)</option>
-                            </select>
-                            {incomeType === 'variable' && (
-                                <small style={{ color: 'var(--color-text-muted)', marginTop: 'var(--space-xs)', display: 'block' }}>
-                                    Gäller för: {formatYearMonth(currentMonth)}
-                                </small>
-                            )}
+                        <div style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)', marginTop: 'var(--space-sm)' }}>
+                            Gäller för: {formatYearMonth(currentMonth)}
                         </div>
                     </div>
                     <div className="modal-footer">

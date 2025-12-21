@@ -13,17 +13,13 @@ router.get('/', (req: Request, res: Response) => {
 
 // Create income
 router.post('/', validate(IncomeSchema), (req: Request, res: Response) => {
-    const { name, owner, amount, income_type, year_month } = req.body;
+    const { name, owner, amount, year_month } = req.body;
 
     if (!['jag', 'fruga'].includes(owner)) {
         return res.status(400).json({ error: 'Owner must be "jag" or "fruga"' });
     }
 
-    if (!['fixed', 'variable'].includes(income_type)) {
-        return res.status(400).json({ error: 'income_type must be "fixed" or "variable"' });
-    }
-
-    const income = db.createIncome(name, owner, amount, income_type, year_month ?? null);
+    const income = db.createIncome(name, owner, amount, year_month);
     res.status(201).json(income);
 });
 
