@@ -154,19 +154,20 @@ describe('Expense Override System', () => {
                 name: 'El',
                 amount: 500,
                 expense_type: 'fixed',
-                payment_method: 'efaktura'
+                payment_method: 'efaktura_gemensamt'
             }) as Expense;
 
             createExpenseOverride(original.id, 202605, {
                 name: 'El',
                 amount: 800,
-                payment_method: 'efaktura'
+                payment_method: 'efaktura_gemensamt'
             });
 
             // Check multiple months
-            const jan = (getExpenses(202601) as any[])[0];
-            const feb = (getExpenses(202602) as any[])[0];
-            const may = (getExpenses(202605) as any[])[0];
+            const expensesJan = getExpenses(202601) as any[];
+            const jan = expensesJan.find(e => e.name === 'El');
+            const feb = (getExpenses(202602) as any[]).find(e => e.name === 'El');
+            const may = (getExpenses(202605) as any[]).find(e => e.name === 'El');
 
             expect(jan.amount).toBe(500);
             expect(feb.amount).toBe(500);

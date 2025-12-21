@@ -66,4 +66,7 @@ try {
   // Column already exists
 }
 
+// Migration: Fix legacy payment method names
+db.exec(`UPDATE expenses SET payment_method = 'efaktura_gemensamt' WHERE payment_method = 'efaktura'`);
+
 export default db;

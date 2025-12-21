@@ -13,7 +13,7 @@ export function calculateTotalIncome(incomes: Income[]): number {
  */
 export function calculateTotalExpenses(expenses: Expense[], yearMonth: number): number {
     return expenses
-        .filter(e => e.expense_type === 'fixed' || e.year_month === yearMonth)
+        .filter(e => (e.expense_type === 'fixed' && e.year_month === null) || e.year_month === yearMonth)
         .reduce((sum, expense) => sum + expense.amount, 0);
 }
 
@@ -34,7 +34,7 @@ export function calculateExpensesByPaymentMethod(
     };
 
     expenses
-        .filter(e => e.expense_type === 'fixed' || e.year_month === yearMonth)
+        .filter(e => (e.expense_type === 'fixed' && e.year_month === null) || e.year_month === yearMonth)
         .forEach(expense => {
             result[expense.payment_method] += expense.amount;
         });
@@ -56,7 +56,7 @@ export function calculateExpensesByPerson(
     };
 
     expenses
-        .filter(e => e.expense_type === 'fixed' || e.year_month === yearMonth)
+        .filter(e => (e.expense_type === 'fixed' && e.year_month === null) || e.year_month === yearMonth)
         .filter(e => e.payment_status !== 'paid')
         .forEach(expense => {
             if (expense.payment_method === 'autogiro_jag' || expense.payment_method === 'efaktura_jag') {
@@ -84,7 +84,7 @@ export function calculateTransferToJoint(
     splitRatio: number = 0.5
 ): { jag: number; fruga: number } {
     const jointTotal = expenses
-        .filter(e => e.expense_type === 'fixed' || e.year_month === yearMonth)
+        .filter(e => (e.expense_type === 'fixed' && e.year_month === null) || e.year_month === yearMonth)
         .filter(e => e.payment_method === 'autogiro_gemensamt' || e.payment_method === 'efaktura_gemensamt')
         .reduce((sum, e) => sum + e.amount, 0);
 
@@ -123,5 +123,5 @@ export function calculateMonthlyOverview(
  * Get expenses for a specific month (fixed + variable for that month)
  */
 export function getExpensesForMonth(expenses: Expense[], yearMonth: number): Expense[] {
-    return expenses.filter(e => e.expense_type === 'fixed' || e.year_month === yearMonth);
+    return expenses.filter(e => (e.expense_type === 'fixed' && e.year_month === null) || e.year_month === yearMonth);
 }

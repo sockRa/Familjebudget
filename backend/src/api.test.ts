@@ -83,7 +83,7 @@ describe('API Routes', () => {
                     name: 'Lunch',
                     amount: 50,
                     expense_type: 'variable',
-                    payment_method: 'efaktura',
+                    payment_method: 'efaktura_gemensamt',
                     year_month: 202310
                 });
 

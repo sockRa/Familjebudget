@@ -136,3 +136,30 @@ describe('getExpensesForMonth', () => {
         expect(result.find(e => e.name === 'Julklappar')).toBeUndefined();
     });
 });
+
+describe('Regression: Multi-month Override Filtering', () => {
+    it('should exclude fixed expenses that are overrides for other months', () => {
+        const expenses: Expense[] = [
+            {
+                id: 1, name: 'Normal Fixed', amount: 1000,
+                category_id: 1,
+                expense_type: 'fixed', payment_method: 'autogiro_gemensamt',
+                payment_status: 'unpaid', year_month: null, created_at: ''
+            },
+            {
+                id: 2, name: 'Override Other Month', amount: 500,
+                category_id: 1,
+                expense_type: 'fixed', payment_method: 'autogiro_gemensamt',
+                payment_status: 'unpaid', year_month: 202412, created_at: ''
+            }
+        ];
+
+        // Should only count id: 1 for month 202501
+        expect(calculateTotalExpenses(expenses, 202501)).toBe(1000);
+
+        // Should count both id: 1 and id: 2 for month 202412
+        // Wait, if id: 2 is an override for id: 1, then db.getExpenses would only return id: 2.
+        // But the calculation function should still be robust.
+        expect(calculateTotalExpenses(expenses, 202412)).toBe(1500);
+    });
+});

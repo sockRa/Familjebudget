@@ -10,9 +10,9 @@ export function getCategoryById(id: number) {
   return db.prepare('SELECT * FROM categories WHERE id = ?').get(id);
 }
 
-export function createCategory(name: string) {
-  const result = db.prepare('INSERT INTO categories (name) VALUES (?)').run(name);
-  return { id: Number(result.lastInsertRowid), name };
+export function createCategory(name: string, color: string = '#cccccc') {
+  const result = db.prepare('INSERT INTO categories (name, color) VALUES (?, ?)').run(name, color);
+  return { id: Number(result.lastInsertRowid), name, color };
 }
 
 export function updateCategory(id: number, updates: { name?: string }) {
