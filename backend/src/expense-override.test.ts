@@ -4,6 +4,16 @@ import {
 } from './db.js';
 import db from './db/sqlite.js';
 
+interface Expense {
+    id: number;
+    name: string;
+    amount: number;
+    expense_type: string;
+    year_month: number | null;
+    overrides_expense_id: number | null;
+    payment_method: string;
+}
+
 describe('Expense Override System', () => {
     beforeEach(() => {
         // Clear expenses before each test
@@ -18,7 +28,7 @@ describe('Expense Override System', () => {
                 amount: 10000,
                 expense_type: 'fixed',
                 payment_method: 'autogiro_gemensamt'
-            });
+            }) as Expense;
 
             expect(expense.name).toBe('Hyra');
             expect(expense.expense_type).toBe('fixed');
@@ -71,7 +81,7 @@ describe('Expense Override System', () => {
                 amount: 10000,
                 expense_type: 'fixed',
                 payment_method: 'autogiro_gemensamt'
-            });
+            }) as Expense;
 
             // Create override for feb with new amount
             createExpenseOverride(original.id, 202602, {
@@ -100,7 +110,7 @@ describe('Expense Override System', () => {
                 amount: 179,
                 expense_type: 'fixed',
                 payment_method: 'efaktura'
-            });
+            }) as Expense;
 
             const override = createExpenseOverride(original.id, 202603, {
                 name: 'Netflix',
@@ -118,7 +128,7 @@ describe('Expense Override System', () => {
                 amount: 129,
                 expense_type: 'fixed',
                 payment_method: 'autogiro_jag'
-            });
+            }) as Expense;
 
             // First override
             createExpenseOverride(original.id, 202604, {
@@ -145,7 +155,7 @@ describe('Expense Override System', () => {
                 amount: 500,
                 expense_type: 'fixed',
                 payment_method: 'efaktura'
-            });
+            }) as Expense;
 
             createExpenseOverride(original.id, 202605, {
                 name: 'El',
