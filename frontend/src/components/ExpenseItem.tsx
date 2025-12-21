@@ -1,7 +1,13 @@
 import { Expense, PaymentStatus, PAYMENT_STATUS_ICONS, formatCurrency } from '../types';
 
+interface Settings {
+    person1Name: string;
+    person2Name: string;
+}
+
 interface ExpenseItemProps {
     expense: Expense;
+    settings: Settings;
     onEdit: (e: Expense) => void;
     onDelete: (id: number) => void;
     onToggleStatus: (id: number, status: PaymentStatus) => void;
@@ -9,6 +15,7 @@ interface ExpenseItemProps {
 
 export function ExpenseItem({
     expense,
+    settings,
     onEdit,
     onDelete,
     onToggleStatus
@@ -20,33 +27,43 @@ export function ExpenseItem({
         onToggleStatus(expense.id, nextStatus);
     };
 
+    const getPaymentMethodLabel = () => {
+        switch (expense.payment_method) {
+            case 'efaktura': return 'E-faktura';
+            case 'autogiro_jag': return settings.person1Name;
+            case 'autogiro_fruga': return settings.person2Name;
+            case 'autogiro_gemensamt': return 'Gemensamt';
+            default: return expense.payment_method;
+        }
+    };
+
     return (
         <div className="expense-item">
             <button
-                className="btn btn-icon"
+                className="expense-status-btn"
                 onClick={cycleStatus}
-                title={`Status: ${expense.payment_status || 'unpaid'}`}
-                style={{ fontSize: '1.2rem', background: 'transparent', border: 'none', cursor: 'pointer' }}
+                title={`Klicka för att ändra status`}
             >
                 {PAYMENT_STATUS_ICONS[expense.payment_status || 'unpaid']}
             </button>
-            <span className={`payment-chip ${expense.payment_method}`}>
-                {expense.payment_method === 'efaktura' ? 'E-faktura' :
-                    expense.payment_method === 'autogiro_jag' ? 'Jag' :
-                        expense.payment_method === 'autogiro_fruga' ? 'Fruga' :
-                            'Gemensamt'}
-            </span>
-            <span className="expense-name">{expense.name}</span>
-            {expense.category_name && (
-                <span
-                    className="expense-category"
-                    style={{ borderLeft: `3px solid ${expense.category_color || '#6366f1'}` }}
-                >
-                    {expense.category_name}
-                </span>
-            )}
+            <div className="expense-info">
+                <span className="expense-name">{expense.name}</span>
+                <div className="expense-meta">
+                    <span className={`payment-chip ${expense.payment_method}`}>
+                        {getPaymentMethodLabel()}
+                    </span>
+                    {expense.category_name && (
+                        <span
+                            className="expense-category"
+                            style={{ backgroundColor: `${expense.category_color}20`, color: expense.category_color }}
+                        >
+                            {expense.category_name}
+                        </span>
+                    )}
+                </div>
+            </div>
             <span className="expense-amount">{formatCurrency(expense.amount)}</span>
-            <div style={{ display: 'flex', gap: 'var(--space-xs)' }}>
+            <div className="expense-actions">
                 <button className="btn btn-icon btn-secondary" onClick={() => onEdit(expense)}>✏️</button>
                 <button className="btn btn-icon btn-danger" onClick={() => onDelete(expense.id)}>🗑️</button>
             </div>

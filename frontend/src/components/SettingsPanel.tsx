@@ -29,7 +29,7 @@ export function SettingsPanel({
                 <span className="section-title">Inställningar</span>
             </div>
             <div className="form-group">
-                <label className="form-label">Person 1 (visas som "Jag" i systemet)</label>
+                <label className="form-label">Namn person 1</label>
                 <input
                     type="text"
                     className="form-input"
@@ -39,7 +39,7 @@ export function SettingsPanel({
                 />
             </div>
             <div className="form-group">
-                <label className="form-label">Person 2 (visas som "Fruga" i systemet)</label>
+                <label className="form-label">Namn person 2</label>
                 <input
                     type="text"
                     className="form-input"

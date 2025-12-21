@@ -1,20 +1,30 @@
 import { useState } from 'react';
 import { Category, Expense } from '../../types';
+import { categoriesApi } from '../../api';
+
+interface Settings {
+    person1Name: string;
+    person2Name: string;
+}
 
 interface ExpenseModalProps {
     expense: Expense | null;
     categories: Category[];
+    settings: Settings;
     currentMonth: number;
     onSave: (data: any) => void;
     onClose: () => void;
+    onCategoryCreated: () => void;
 }
 
 export function ExpenseModal({
     expense,
     categories,
+    settings,
     currentMonth,
     onSave,
     onClose,
+    onCategoryCreated,
 }: ExpenseModalProps) {
     const [name, setName] = useState(expense?.name || '');
     const [amount, setAmount] = useState(expense?.amount?.toString() || '');
@@ -22,6 +32,12 @@ export function ExpenseModal({
     const [expenseType, setExpenseType] = useState(expense?.expense_type || 'fixed');
     const [paymentMethod, setPaymentMethod] = useState(expense?.payment_method || 'efaktura');
     const paymentStatus = expense?.payment_status || 'unpaid';
+
+    // New category creation
+    const [showNewCategory, setShowNewCategory] = useState(false);
+    const [newCategoryName, setNewCategoryName] = useState('');
+    const [newCategoryColor, setNewCategoryColor] = useState('#6366f1');
+    const [isCreatingCategory, setIsCreatingCategory] = useState(false);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -34,6 +50,26 @@ export function ExpenseModal({
             payment_status: paymentStatus,
             year_month: expenseType === 'variable' ? currentMonth : null,
         });
+    };
+
+    const handleCreateCategory = async () => {
+        if (!newCategoryName.trim()) return;
+
+        setIsCreatingCategory(true);
+        try {
+            const newCategory = await categoriesApi.create({
+                name: newCategoryName.trim(),
+                color: newCategoryColor
+            });
+            setCategoryId(newCategory.id.toString());
+            setShowNewCategory(false);
+            setNewCategoryName('');
+            onCategoryCreated();
+        } catch (err) {
+            console.error('Failed to create category:', err);
+        } finally {
+            setIsCreatingCategory(false);
+        }
     };
 
     return (
@@ -83,16 +119,61 @@ export function ExpenseModal({
                             </div>
                             <div className="form-group">
                                 <label className="form-label">Kategori</label>
-                                <select
-                                    className="form-select"
-                                    value={categoryId}
-                                    onChange={e => setCategoryId(e.target.value)}
-                                >
-                                    <option value="">Ingen kategori</option>
-                                    {categories.map(c => (
-                                        <option key={c.id} value={c.id}>{c.name}</option>
-                                    ))}
-                                </select>
+                                {!showNewCategory ? (
+                                    <div style={{ display: 'flex', gap: 'var(--space-xs)' }}>
+                                        <select
+                                            className="form-select"
+                                            value={categoryId}
+                                            onChange={e => setCategoryId(e.target.value)}
+                                            style={{ flex: 1 }}
+                                        >
+                                            <option value="">Ingen kategori</option>
+                                            {categories.map(c => (
+                                                <option key={c.id} value={c.id}>{c.name}</option>
+                                            ))}
+                                        </select>
+                                        <button
+                                            type="button"
+                                            className="btn btn-secondary"
+                                            onClick={() => setShowNewCategory(true)}
+                                            title="Skapa ny kategori"
+                                        >
+                                            +
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div style={{ display: 'flex', gap: 'var(--space-xs)', flexWrap: 'wrap' }}>
+                                        <input
+                                            type="text"
+                                            className="form-input"
+                                            placeholder="Kategorinamn"
+                                            value={newCategoryName}
+                                            onChange={e => setNewCategoryName(e.target.value)}
+                                            style={{ flex: 1, minWidth: '120px' }}
+                                        />
+                                        <input
+                                            type="color"
+                                            value={newCategoryColor}
+                                            onChange={e => setNewCategoryColor(e.target.value)}
+                                            style={{ width: '40px', padding: '2px', cursor: 'pointer' }}
+                                        />
+                                        <button
+                                            type="button"
+                                            className="btn btn-primary"
+                                            onClick={handleCreateCategory}
+                                            disabled={isCreatingCategory || !newCategoryName.trim()}
+                                        >
+                                            ✓
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="btn btn-secondary"
+                                            onClick={() => { setShowNewCategory(false); setNewCategoryName(''); }}
+                                        >
+                                            ✕
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         </div>
                         <div className="form-group">
@@ -103,8 +184,8 @@ export function ExpenseModal({
                                 onChange={e => setPaymentMethod(e.target.value as any)}
                             >
                                 <option value="efaktura">📧 E-faktura</option>
-                                <option value="autogiro_jag">🔄 Autogiro (Person 1)</option>
-                                <option value="autogiro_fruga">🔄 Autogiro (Person 2)</option>
+                                <option value="autogiro_jag">🔄 Autogiro ({settings.person1Name})</option>
+                                <option value="autogiro_fruga">🔄 Autogiro ({settings.person2Name})</option>
                                 <option value="autogiro_gemensamt">🔄 Autogiro (Gemensamt konto)</option>
                             </select>
                         </div>

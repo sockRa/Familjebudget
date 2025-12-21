@@ -34,14 +34,16 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS expenses (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
-    amount REAL NOT NULL,
+    amount REAL NOT NULL, 
     category_id INTEGER,
     expense_type TEXT NOT NULL CHECK(expense_type IN ('fixed', 'variable')),
     payment_method TEXT NOT NULL,
     payment_status TEXT NOT NULL DEFAULT 'unpaid',
     year_month INTEGER,
+    overrides_expense_id INTEGER,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE SET NULL
+    FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE SET NULL,
+    FOREIGN KEY (overrides_expense_id) REFERENCES expenses (id) ON DELETE CASCADE
   );
 `);
 
@@ -53,6 +55,13 @@ try {
 }
 try {
   db.exec(`ALTER TABLE incomes ADD COLUMN year_month INTEGER`);
+} catch (e) {
+  // Column already exists
+}
+
+// Migration: Add overrides_expense_id column to existing expenses table
+try {
+  db.exec(`ALTER TABLE expenses ADD COLUMN overrides_expense_id INTEGER REFERENCES expenses(id) ON DELETE CASCADE`);
 } catch (e) {
   // Column already exists
 }

@@ -37,6 +37,7 @@ export interface Expense {
     payment_method: PaymentMethod;
     payment_status: PaymentStatus;
     year_month: number | null;
+    overrides_expense_id: number | null;
     created_at: string;
 }
 

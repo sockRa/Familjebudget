@@ -61,6 +61,11 @@ export const expensesApi = {
         fetchJSON<import('./types').Expense>(`/expenses/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     delete: (id: number) =>
         fetchJSON<void>(`/expenses/${id}`, { method: 'DELETE' }),
+    createOverride: (id: number, yearMonth: number, data: Partial<import('./types').Expense>) =>
+        fetchJSON<import('./types').Expense>(`/expenses/${id}/override`, {
+            method: 'POST',
+            body: JSON.stringify({ ...data, year_month: yearMonth })
+        }),
 };
 
 // Overview

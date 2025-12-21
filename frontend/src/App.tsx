@@ -101,10 +101,18 @@ function App() {
     };
 
     // Handlers
-    const handleSaveExpense = async (data: Partial<Expense> & { name: string; amount: number; expense_type: string; payment_method: string }) => {
+    const handleSaveExpense = async (data: any) => {
         try {
             if (editingExpense) {
-                await expensesApi.update(editingExpense.id, data);
+                // If editing a fixed expense, create an override for this month instead
+                if (editingExpense.expense_type === 'fixed' && !editingExpense.overrides_expense_id) {
+                    // Get the original expense ID (either this one, or what it overrides)
+                    const originalId = editingExpense.id;
+                    await expensesApi.createOverride(originalId, currentMonth, data);
+                } else {
+                    // Normal update (for variable expenses or existing overrides)
+                    await expensesApi.update(editingExpense.id, data);
+                }
             } else {
                 await expensesApi.create({
                     ...data,
@@ -234,6 +242,7 @@ function App() {
                                         <ExpenseItem
                                             key={expense.id}
                                             expense={expense}
+                                            settings={settings}
                                             onEdit={(e) => { setEditingExpense(e); setShowExpenseModal(true); }}
                                             onDelete={handleDeleteExpense}
                                             onToggleStatus={handleToggleStatus}
@@ -263,6 +272,7 @@ function App() {
                                 <ExpenseItem
                                     key={expense.id}
                                     expense={expense}
+                                    settings={settings}
                                     onEdit={(e) => { setEditingExpense(e); setShowExpenseModal(true); }}
                                     onDelete={handleDeleteExpense}
                                     onToggleStatus={handleToggleStatus}
@@ -349,9 +359,11 @@ function App() {
                 <ExpenseModal
                     expense={editingExpense}
                     categories={categories}
+                    settings={settings}
                     currentMonth={currentMonth}
                     onSave={handleSaveExpense}
                     onClose={() => { setShowExpenseModal(false); setEditingExpense(null); }}
+                    onCategoryCreated={loadData}
                 />
             )}
 

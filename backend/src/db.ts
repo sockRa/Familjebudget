@@ -82,21 +82,35 @@ export function deleteIncome(id: number): boolean {
 
 // Expenses
 export function getExpenses(yearMonth?: number) {
-  let query = `
+  if (!yearMonth) {
+    // No month specified - return all expenses (for admin purposes)
+    return db.prepare(`
+      SELECT e.*, c.name as category_name, c.color as category_color
+      FROM expenses e
+      LEFT JOIN categories c ON e.category_id = c.id
+      ORDER BY e.expense_type = 'fixed' DESC, e.payment_method, e.name COLLATE NOCASE
+    `).all();
+  }
+
+  // Get fixed expenses that DON'T have an override for this month
+  // Plus variable expenses for this month
+  // Plus overrides for this month
+  const query = `
     SELECT e.*, c.name as category_name, c.color as category_color
     FROM expenses e
     LEFT JOIN categories c ON e.category_id = c.id
+    WHERE 
+      -- Fixed expenses without an override for this month
+      (e.expense_type = 'fixed' AND e.overrides_expense_id IS NULL 
+       AND e.id NOT IN (SELECT overrides_expense_id FROM expenses WHERE year_month = ? AND overrides_expense_id IS NOT NULL))
+      -- Variable expenses for this month
+      OR (e.expense_type = 'variable' AND e.year_month = ? AND e.overrides_expense_id IS NULL)
+      -- Overrides for this month
+      OR (e.overrides_expense_id IS NOT NULL AND e.year_month = ?)
+    ORDER BY e.expense_type = 'fixed' DESC, e.payment_method, e.name COLLATE NOCASE
   `;
-  const params = [];
 
-  if (yearMonth) {
-    query += " WHERE e.expense_type = 'fixed' OR e.year_month = ?";
-    params.push(yearMonth);
-  }
-
-  query += " ORDER BY e.expense_type = 'fixed' DESC, e.payment_method, e.name COLLATE NOCASE";
-
-  return db.prepare(query).all(...params);
+  return db.prepare(query).all(yearMonth, yearMonth, yearMonth);
 }
 
 export function getExpenseById(id: number) {
@@ -152,6 +166,41 @@ export function deleteExpense(id: number): boolean {
   return result.changes > 0;
 }
 
+// Create or update an override for a fixed expense
+export function createExpenseOverride(originalExpenseId: number, yearMonth: number, overrideData: any) {
+  // Check if override already exists for this month
+  const existing = db.prepare(`
+    SELECT id FROM expenses 
+    WHERE overrides_expense_id = ? AND year_month = ?
+  `).get(originalExpenseId, yearMonth) as { id: number } | undefined;
+
+  if (existing) {
+    // Update existing override
+    return updateExpense(existing.id, overrideData);
+  }
+
+  // Create new override
+  const capitalizedName = overrideData.name ?
+    overrideData.name.charAt(0).toUpperCase() + overrideData.name.slice(1) :
+    null;
+
+  const result = db.prepare(`
+    INSERT INTO expenses (name, amount, category_id, expense_type, payment_method, payment_status, year_month, overrides_expense_id, created_at)
+    VALUES (?, ?, ?, 'variable', ?, ?, ?, ?, ?)
+  `).run(
+    capitalizedName || overrideData.name,
+    overrideData.amount,
+    overrideData.category_id ?? null,
+    overrideData.payment_method,
+    overrideData.payment_status || 'unpaid',
+    yearMonth,
+    originalExpenseId,
+    new Date().toISOString()
+  );
+
+  return getExpenseById(Number(result.lastInsertRowid));
+}
+
 // For calculations
 export function getAllIncomes() {
   return db.prepare('SELECT * FROM incomes').all();
@@ -177,6 +226,7 @@ export default {
   createExpense,
   updateExpense,
   deleteExpense,
+  createExpenseOverride,
   getAllIncomes,
   getAllExpenses,
 };
