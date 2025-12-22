@@ -94,7 +94,7 @@ export function getExpenses(yearMonth?: number) {
   // Get:
   // 1. Fixed expenses that DON'T have an override for this month (and aren't overrides themselves)
   // 2. Variable expenses for this month (not overrides)
-  // 3. Overrides for this month (have overrides_expense_id set)
+  // 3. Overrides for this month (have overrides_expense_id set) - but NOT deleted ones
   const query = `
     SELECT e.*, c.name as category_name
     FROM expenses e
@@ -105,8 +105,8 @@ export function getExpenses(yearMonth?: number) {
        AND e.id NOT IN (SELECT overrides_expense_id FROM expenses WHERE year_month = ? AND overrides_expense_id IS NOT NULL))
       -- Variable expenses for this month (not overrides)
       OR (e.expense_type = 'variable' AND e.year_month = ? AND e.overrides_expense_id IS NULL)
-      -- Fixed overrides for this month
-      OR (e.expense_type = 'fixed' AND e.overrides_expense_id IS NOT NULL AND e.year_month = ?)
+      -- Fixed overrides for this month (excluding deleted ones)
+      OR (e.expense_type = 'fixed' AND e.overrides_expense_id IS NOT NULL AND e.year_month = ? AND (e.is_deleted IS NULL OR e.is_deleted = 0))
     ORDER BY e.expense_type = 'fixed' DESC, e.payment_method, e.name COLLATE NOCASE
   `;
 
@@ -204,6 +204,42 @@ export function createExpenseOverride(originalExpenseId: number, yearMonth: numb
   return getExpenseById(Number(result.lastInsertRowid));
 }
 
+// Create a "deleted" override to hide a fixed expense for a specific month
+export function createDeletedOverride(originalExpenseId: number, yearMonth: number) {
+  // Check if override already exists for this month
+  const existing = db.prepare(`
+    SELECT id FROM expenses 
+    WHERE overrides_expense_id = ? AND year_month = ?
+  `).get(originalExpenseId, yearMonth) as { id: number } | undefined;
+
+  if (existing) {
+    // Update existing override to be deleted
+    db.prepare('UPDATE expenses SET is_deleted = 1 WHERE id = ?').run(existing.id);
+    return getExpenseById(existing.id);
+  }
+
+  // Get original expense
+  const original = getExpenseById(originalExpenseId) as any;
+  if (!original) throw new Error('Original expense not found');
+
+  // Create new "deleted" override
+  const result = db.prepare(`
+    INSERT INTO expenses (name, amount, category_id, expense_type, payment_method, payment_status, year_month, overrides_expense_id, is_deleted, created_at)
+    VALUES (?, ?, ?, 'fixed', ?, ?, ?, ?, 1, ?)
+  `).run(
+    original.name,
+    original.amount,
+    original.category_id,
+    original.payment_method,
+    original.payment_status,
+    yearMonth,
+    originalExpenseId,
+    new Date().toISOString()
+  );
+
+  return getExpenseById(Number(result.lastInsertRowid));
+}
+
 // For calculations
 export function getAllIncomes() {
   return db.prepare('SELECT * FROM incomes').all();
@@ -230,6 +266,7 @@ export default {
   updateExpense,
   deleteExpense,
   createExpenseOverride,
+  createDeletedOverride,
   getAllIncomes,
   getAllExpenses,
 };

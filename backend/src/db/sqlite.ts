@@ -66,6 +66,13 @@ try {
   // Column already exists
 }
 
+// Migration: Add is_deleted column for soft-deleting fixed expenses per month
+try {
+  db.exec(`ALTER TABLE expenses ADD COLUMN is_deleted INTEGER DEFAULT 0`);
+} catch (e) {
+  // Column already exists
+}
+
 // Migration: Fix legacy payment method names
 db.exec(`UPDATE expenses SET payment_method = 'efaktura_gemensamt' WHERE payment_method = 'efaktura'`);
 

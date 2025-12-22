@@ -140,6 +140,42 @@ function App() {
     };
 
     const handleDeleteExpense = async (id: number) => {
+        const expense = expenses.find(e => e.id === id);
+        if (!expense) return;
+
+        // For fixed expenses (that are not already overrides), ask if they want to hide just this month or delete permanently
+        if (expense.expense_type === 'fixed' && !expense.overrides_expense_id) {
+            const choice = window.prompt(
+                'Vill du dölja denna utgift bara för denna månad, eller ta bort den permanent?\n\n' +
+                'Skriv "1" för bara denna månad\n' +
+                'Skriv "2" för permanent borttagning\n' +
+                'Tryck Avbryt för att avbryta'
+            );
+
+            if (choice === '1') {
+                // Hide just this month
+                try {
+                    await expensesApi.hideForMonth(id, currentMonth);
+                    loadData();
+                } catch (err) {
+                    console.error('Failed to hide expense:', err);
+                }
+            } else if (choice === '2') {
+                // Permanent deletion
+                if (confirm('Är du säker? Detta tar bort utgiften från ALLA månader.')) {
+                    try {
+                        await expensesApi.delete(id);
+                        loadData();
+                    } catch (err) {
+                        console.error('Failed to delete expense:', err);
+                    }
+                }
+            }
+            // Any other value = cancel
+            return;
+        }
+
+        // For variable expenses or overrides, just delete directly
         if (!confirm('Är du säker på att du vill ta bort denna utgift?')) return;
         try {
             await expensesApi.delete(id);

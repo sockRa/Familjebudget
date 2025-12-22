@@ -61,4 +61,21 @@ router.post('/:id/override', validate(ExpenseUpdateSchema), (req: Request, res: 
     }
 });
 
+// Hide a fixed expense for a specific month (soft delete)
+router.post('/:id/hide/:yearMonth', (req: Request, res: Response) => {
+    const originalId = parseInt(req.params.id);
+    const yearMonth = parseInt(req.params.yearMonth);
+
+    if (!yearMonth || isNaN(yearMonth)) {
+        return res.status(400).json({ error: 'Valid yearMonth is required' });
+    }
+
+    try {
+        const deleted = db.createDeletedOverride(originalId, yearMonth);
+        res.status(201).json(deleted);
+    } catch (err: any) {
+        res.status(400).json({ error: err.message });
+    }
+});
+
 export default router;

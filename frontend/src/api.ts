@@ -66,6 +66,8 @@ export const expensesApi = {
             method: 'POST',
             body: JSON.stringify({ ...data, year_month: yearMonth })
         }),
+    hideForMonth: (id: number, yearMonth: number) =>
+        fetchJSON<import('./types').Expense>(`/expenses/${id}/hide/${yearMonth}`, { method: 'POST' }),
 };
 
 // Overview
