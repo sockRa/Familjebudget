@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
-    Category, Income, Expense, MonthlyOverview, PaymentStatus,
+    Category, Income, Expense, MonthlyOverview, PaymentStatus, Settings,
     formatCurrency, formatYearMonth, getCurrentYearMonth, addMonths,
-    getPaymentMethodLabel, getOwnerLabel
+    getPaymentMethodLabel, getOwnerLabel, DEFAULT_SETTINGS
 } from './types';
-import { categoriesApi, incomesApi, expensesApi, overviewApi } from './api';
+import { categoriesApi, incomesApi, expensesApi, overviewApi, settingsApi, ApiError } from './api';
 
 // Components
 import { SummaryCards } from './components/SummaryCards';
@@ -13,36 +13,20 @@ import { CategoriesManager } from './components/CategoriesManager';
 import { SettingsPanel } from './components/SettingsPanel';
 import { ExpenseModal } from './components/Modals/ExpenseModal';
 import { IncomeModal } from './components/Modals/IncomeModal';
+import { ConfirmDialog } from './components/ConfirmDialog';
+import { StatisticsPanel } from './components/StatisticsPanel';
 
-// Settings stored in localStorage
-interface Settings {
-    person1Name: string;
-    person2Name: string;
-}
-
-const DEFAULT_SETTINGS: Settings = {
-    person1Name: 'Person 1',
-    person2Name: 'Person 2',
-};
-
-function getSettings(): Settings {
-    const stored = localStorage.getItem('budget_settings');
-    return stored ? { ...DEFAULT_SETTINGS, ...JSON.parse(stored) } : DEFAULT_SETTINGS;
-}
-
-function saveSettings(settings: Settings) {
-    localStorage.setItem('budget_settings', JSON.stringify(settings));
-}
-
-type Tab = 'overview' | 'incomes' | 'categories' | 'settings';
+type Tab = 'overview' | 'incomes' | 'categories' | 'settings' | 'statistics';
 
 function App() {
     const [theme, setTheme] = useState<'light' | 'dark'>(() => {
         return (localStorage.getItem('theme') as 'light' | 'dark') || 'dark';
     });
-    const [settings, setSettings] = useState<Settings>(getSettings);
+    const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
+    const [settingsLoaded, setSettingsLoaded] = useState(false);
     const [activeTab, setActiveTab] = useState<Tab>('overview');
     const [currentMonth, setCurrentMonth] = useState(getCurrentYearMonth());
+    const [isLoading, setIsLoading] = useState(true);
 
     // Data
     const [categories, setCategories] = useState<Category[]>([]);
@@ -57,15 +41,43 @@ function App() {
     const [editingIncome, setEditingIncome] = useState<Income | null>(null);
     const [error, setError] = useState<string | null>(null);
 
+    // Confirm dialog state
+    const [confirmDialog, setConfirmDialog] = useState<{
+        isOpen: boolean;
+        title: string;
+        message: string;
+        onConfirm: () => void;
+        variant?: 'danger' | 'warning' | 'info';
+    }>({ isOpen: false, title: '', message: '', onConfirm: () => { } });
+
+    // Swipe handling
+    const touchStartX = useRef<number | null>(null);
+    const touchEndX = useRef<number | null>(null);
+    const appRef = useRef<HTMLDivElement>(null);
+
     // Theme effect
     useEffect(() => {
         document.documentElement.setAttribute('data-theme', theme);
         localStorage.setItem('theme', theme);
     }, [theme]);
 
+    // Load settings from server
+    useEffect(() => {
+        settingsApi.get()
+            .then(s => {
+                setSettings(s);
+                setSettingsLoaded(true);
+            })
+            .catch(err => {
+                console.error('Failed to load settings:', err);
+                setSettingsLoaded(true);
+            });
+    }, []);
+
     // Load data
     const loadData = useCallback(async () => {
         setError(null);
+        setIsLoading(true);
         try {
             const [cats, incs, exps, ov] = await Promise.all([
                 categoriesApi.getAll(),
@@ -77,27 +89,85 @@ function App() {
             setIncomes(incs);
             setExpenses(exps);
             setOverview(ov);
-        } catch (err: any) {
+        } catch (err) {
             console.error('Failed to load data:', err);
-            setError('Kunde inte ladda data. Försök igen senare.');
+            if (err instanceof ApiError) {
+                setError(err.getDetailedMessage());
+            } else {
+                setError('Kunde inte ladda data. Försök igen senare.');
+            }
+        } finally {
+            setIsLoading(false);
         }
     }, [currentMonth]);
 
+    // Keyboard navigation
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (showExpenseModal || showIncomeModal) return;
+            if (showExpenseModal || showIncomeModal || confirmDialog.isOpen) return;
             if (e.key === 'ArrowLeft') setCurrentMonth(m => addMonths(m, -1));
             if (e.key === 'ArrowRight') setCurrentMonth(m => addMonths(m, 1));
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [showExpenseModal, showIncomeModal]);
+    }, [showExpenseModal, showIncomeModal, confirmDialog.isOpen]);
+
+    // Swipe handling for touch devices
+    useEffect(() => {
+        const element = appRef.current;
+        if (!element) return;
+
+        const handleTouchStart = (e: TouchEvent) => {
+            touchStartX.current = e.changedTouches[0].screenX;
+        };
+
+        const handleTouchEnd = (e: TouchEvent) => {
+            touchEndX.current = e.changedTouches[0].screenX;
+            handleSwipe();
+        };
+
+        const handleSwipe = () => {
+            if (touchStartX.current === null || touchEndX.current === null) return;
+            if (showExpenseModal || showIncomeModal || confirmDialog.isOpen) return;
+
+            const diff = touchStartX.current - touchEndX.current;
+            const minSwipeDistance = 75;
+
+            if (Math.abs(diff) > minSwipeDistance) {
+                if (diff > 0) {
+                    // Swipe left -> next month
+                    setCurrentMonth(m => addMonths(m, 1));
+                } else {
+                    // Swipe right -> previous month
+                    setCurrentMonth(m => addMonths(m, -1));
+                }
+            }
+
+            touchStartX.current = null;
+            touchEndX.current = null;
+        };
+
+        element.addEventListener('touchstart', handleTouchStart, { passive: true });
+        element.addEventListener('touchend', handleTouchEnd, { passive: true });
+
+        return () => {
+            element.removeEventListener('touchstart', handleTouchStart);
+            element.removeEventListener('touchend', handleTouchEnd);
+        };
+    }, [showExpenseModal, showIncomeModal, confirmDialog.isOpen]);
 
     useEffect(() => {
         loadData();
     }, [loadData]);
 
     // Helpers
+    const showConfirm = (title: string, message: string, onConfirm: () => void, variant: 'danger' | 'warning' | 'info' = 'danger') => {
+        setConfirmDialog({ isOpen: true, title, message, onConfirm, variant });
+    };
+
+    const closeConfirm = () => {
+        setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+    };
 
     const fixedExpenses = expenses.filter(e => e.expense_type === 'fixed');
     const variableExpenses = expenses.filter(e => e.expense_type === 'variable');
@@ -115,13 +185,10 @@ function App() {
     const handleSaveExpense = async (data: any) => {
         try {
             if (editingExpense) {
-                // If editing a fixed expense, create an override for this month instead
                 if (editingExpense.expense_type === 'fixed' && !editingExpense.overrides_expense_id) {
-                    // Get the original expense ID (either this one, or what it overrides)
                     const originalId = editingExpense.id;
                     await expensesApi.createOverride(originalId, currentMonth, data);
                 } else {
-                    // Normal update (for variable expenses or existing overrides)
                     await expensesApi.update(editingExpense.id, data);
                 }
             } else {
@@ -133,56 +200,31 @@ function App() {
             setShowExpenseModal(false);
             setEditingExpense(null);
             loadData();
-        } catch (err: any) {
+        } catch (err) {
             console.error('Failed to save expense:', err);
-            setError(err.message || 'Kunde inte spara utgift.');
+            if (err instanceof ApiError) {
+                setError(err.getDetailedMessage());
+            } else if (err instanceof Error) {
+                setError(err.message || 'Kunde inte spara utgift.');
+            }
         }
     };
 
-    const handleDeleteExpense = async (id: number) => {
-        const expense = expenses.find(e => e.id === id);
-        if (!expense) return;
-
-        // For fixed expenses (that are not already overrides), ask if they want to hide just this month or delete permanently
-        if (expense.expense_type === 'fixed' && !expense.overrides_expense_id) {
-            const choice = window.prompt(
-                'Vill du dölja denna utgift bara för denna månad, eller ta bort den permanent?\n\n' +
-                'Skriv "1" för bara denna månad\n' +
-                'Skriv "2" för permanent borttagning\n' +
-                'Tryck Avbryt för att avbryta'
-            );
-
-            if (choice === '1') {
-                // Hide just this month
+    const handleDeleteExpense = (id: number) => {
+        showConfirm(
+            'Ta bort utgift',
+            'Är du säker på att du vill ta bort denna utgift?',
+            async () => {
                 try {
-                    await expensesApi.hideForMonth(id, currentMonth);
+                    await expensesApi.delete(id);
                     loadData();
                 } catch (err) {
-                    console.error('Failed to hide expense:', err);
+                    console.error('Failed to delete expense:', err);
+                    setError('Kunde inte ta bort utgift.');
                 }
-            } else if (choice === '2') {
-                // Permanent deletion
-                if (confirm('Är du säker? Detta tar bort utgiften från ALLA månader.')) {
-                    try {
-                        await expensesApi.delete(id);
-                        loadData();
-                    } catch (err) {
-                        console.error('Failed to delete expense:', err);
-                    }
-                }
+                closeConfirm();
             }
-            // Any other value = cancel
-            return;
-        }
-
-        // For variable expenses or overrides, just delete directly
-        if (!confirm('Är du säker på att du vill ta bort denna utgift?')) return;
-        try {
-            await expensesApi.delete(id);
-            loadData();
-        } catch (err) {
-            console.error('Failed to delete expense:', err);
-        }
+        );
     };
 
     const handleToggleStatus = async (id: number, status: PaymentStatus) => {
@@ -206,26 +248,50 @@ function App() {
             loadData();
         } catch (err) {
             console.error('Failed to save income:', err);
+            if (err instanceof ApiError) {
+                setError(err.getDetailedMessage());
+            }
         }
     };
 
-    const handleDeleteIncome = async (id: number) => {
-        if (!confirm('Är du säker på att du vill ta bort denna inkomst?')) return;
+    const handleDeleteIncome = (id: number) => {
+        showConfirm(
+            'Ta bort inkomst',
+            'Är du säker på att du vill ta bort denna inkomst?',
+            async () => {
+                try {
+                    await incomesApi.delete(id);
+                    loadData();
+                } catch (err) {
+                    console.error('Failed to delete income:', err);
+                    setError('Kunde inte ta bort inkomst.');
+                }
+                closeConfirm();
+            }
+        );
+    };
+
+    const handleUpdateSettings = async (newSettings: Settings) => {
         try {
-            await incomesApi.delete(id);
-            loadData();
+            const updated = await settingsApi.update(newSettings);
+            setSettings(updated);
         } catch (err) {
-            console.error('Failed to delete income:', err);
+            console.error('Failed to save settings:', err);
+            setError('Kunde inte spara inställningar.');
         }
     };
 
-    const handleUpdateSettings = (newSettings: Settings) => {
-        setSettings(newSettings);
-        saveSettings(newSettings);
-    };
+    if (!settingsLoaded) {
+        return (
+            <div className="app loading-container">
+                <div className="loading-spinner"></div>
+                <p>Laddar...</p>
+            </div>
+        );
+    }
 
     return (
-        <div className="app">
+        <div className="app" ref={appRef}>
             <header className="header">
                 <h1>💰 Familjebudget</h1>
                 <div className="header-controls">
@@ -273,6 +339,9 @@ function App() {
                 <button className={`tab ${activeTab === 'incomes' ? 'active' : ''}`} onClick={() => setActiveTab('incomes')}>
                     Inkomster
                 </button>
+                <button className={`tab ${activeTab === 'statistics' ? 'active' : ''}`} onClick={() => setActiveTab('statistics')}>
+                    Statistik
+                </button>
                 <button className={`tab ${activeTab === 'categories' ? 'active' : ''}`} onClick={() => setActiveTab('categories')}>
                     Kategorier
                 </button>
@@ -280,6 +349,12 @@ function App() {
                     Inställningar
                 </button>
             </div>
+
+            {isLoading && activeTab === 'overview' && (
+                <div className="loading-overlay">
+                    <div className="loading-spinner"></div>
+                </div>
+            )}
 
             {activeTab === 'overview' && overview && (
                 <>
@@ -398,7 +473,7 @@ function App() {
                     </div>
                     {incomes.length === 0 && (
                         <div className="empty-state">
-                            <div className="empty-state-icon">�</div>
+                            <div className="empty-state-icon">💸</div>
                             <p>Inga inkomster denna månad</p>
                         </div>
                     )}
@@ -410,6 +485,10 @@ function App() {
                         + Lägg till inkomst
                     </button>
                 </div>
+            )}
+
+            {activeTab === 'statistics' && (
+                <StatisticsPanel currentMonth={currentMonth} settings={settings} />
             )}
 
             {activeTab === 'categories' && (
@@ -443,6 +522,16 @@ function App() {
                     onClose={() => { setShowIncomeModal(false); setEditingIncome(null); }}
                 />
             )}
+
+            {/* Confirm Dialog */}
+            <ConfirmDialog
+                isOpen={confirmDialog.isOpen}
+                title={confirmDialog.title}
+                message={confirmDialog.message}
+                onConfirm={confirmDialog.onConfirm}
+                onCancel={closeConfirm}
+                variant={confirmDialog.variant}
+            />
         </div>
     );
 }

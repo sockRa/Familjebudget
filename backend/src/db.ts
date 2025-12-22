@@ -1,5 +1,35 @@
 import db from './db/sqlite.js';
-import { CategorySchema, IncomeSchema, ExpenseSchema } from './db/schemas.js';
+
+// Allowed field names for each entity (prevents SQL injection via field names)
+const ALLOWED_CATEGORY_FIELDS = ['name', 'color'] as const;
+const ALLOWED_INCOME_FIELDS = ['name', 'owner', 'amount', 'year_month'] as const;
+const ALLOWED_EXPENSE_FIELDS = [
+  'name', 'amount', 'category_id', 'expense_type',
+  'payment_method', 'payment_status', 'year_month',
+  'overrides_expense_id', 'is_deleted'
+] as const;
+
+type CategoryField = typeof ALLOWED_CATEGORY_FIELDS[number];
+type IncomeField = typeof ALLOWED_INCOME_FIELDS[number];
+type ExpenseField = typeof ALLOWED_EXPENSE_FIELDS[number];
+
+// Safe update builder using whitelisted fields
+function buildSafeUpdate<T extends string>(
+  allowedFields: readonly T[],
+  updates: Record<string, any>
+): { sql: string; params: any[] } {
+  const sets: string[] = [];
+  const params: any[] = [];
+
+  for (const [key, value] of Object.entries(updates)) {
+    if (allowedFields.includes(key as T)) {
+      sets.push(`${key} = ?`);
+      params.push(value);
+    }
+  }
+
+  return { sql: sets.join(', '), params };
+}
 
 // Categories
 export function getCategories() {
@@ -15,29 +45,25 @@ export function createCategory(name: string, color: string = '#cccccc') {
   return { id: Number(result.lastInsertRowid), name, color };
 }
 
-export function updateCategory(id: number, updates: { name?: string }) {
-  const sets = [];
-  const params = [];
-  if (updates.name !== undefined) { sets.push('name = ?'); params.push(updates.name); }
+export function updateCategory(id: number, updates: Partial<Record<CategoryField, any>>) {
+  const { sql, params } = buildSafeUpdate(ALLOWED_CATEGORY_FIELDS, updates);
 
-  if (sets.length > 0) {
+  if (sql) {
     params.push(id);
-    db.prepare(`UPDATE categories SET ${sets.join(', ')} WHERE id = ?`).run(...params);
+    db.prepare(`UPDATE categories SET ${sql} WHERE id = ?`).run(...params);
   }
   return getCategoryById(id);
 }
 
 export function deleteCategory(id: number): boolean {
   const result = db.prepare('DELETE FROM categories WHERE id = ?').run(id);
-  // SQLite doesn't automatically null out references unless configured with ON DELETE SET NULL
-  // The schema already has ON DELETE SET NULL for category_id in expenses
   return result.changes > 0;
 }
 
 // Incomes
 export function getIncomes(yearMonth?: number) {
   let query = 'SELECT * FROM incomes';
-  const params = [];
+  const params: any[] = [];
 
   if (yearMonth) {
     query += ' WHERE year_month = ?';
@@ -59,17 +85,12 @@ export function createIncome(name: string, owner: string, amount: number, year_m
   return { id: Number(result.lastInsertRowid), name, owner, amount, year_month };
 }
 
-export function updateIncome(id: number, updates: { name?: string; owner?: string; amount?: number; year_month?: number }) {
-  const sets = [];
-  const params = [];
-  if (updates.name !== undefined) { sets.push('name = ?'); params.push(updates.name); }
-  if (updates.owner !== undefined) { sets.push('owner = ?'); params.push(updates.owner); }
-  if (updates.amount !== undefined) { sets.push('amount = ?'); params.push(updates.amount); }
-  if (updates.year_month !== undefined) { sets.push('year_month = ?'); params.push(updates.year_month); }
+export function updateIncome(id: number, updates: Partial<Record<IncomeField, any>>) {
+  const { sql, params } = buildSafeUpdate(ALLOWED_INCOME_FIELDS, updates);
 
-  if (sets.length > 0) {
+  if (sql) {
     params.push(id);
-    db.prepare(`UPDATE incomes SET ${sets.join(', ')} WHERE id = ?`).run(...params);
+    db.prepare(`UPDATE incomes SET ${sql} WHERE id = ?`).run(...params);
   }
   return getIncomeById(id);
 }
@@ -82,53 +103,48 @@ export function deleteIncome(id: number): boolean {
 // Expenses
 export function getExpenses(yearMonth?: number) {
   if (!yearMonth) {
-    // No month specified - return all expenses (for admin purposes)
     return db.prepare(`
-      SELECT e.*, c.name as category_name
-      FROM expenses e
-      LEFT JOIN categories c ON e.category_id = c.id
-      ORDER BY e.expense_type = 'fixed' DESC, e.payment_method, e.name COLLATE NOCASE
-    `).all();
+            SELECT e.*, c.name as category_name
+            FROM expenses e
+            LEFT JOIN categories c ON e.category_id = c.id
+            ORDER BY e.expense_type = 'fixed' DESC, e.payment_method, e.name COLLATE NOCASE
+        `).all();
   }
 
-  // Get:
-  // 1. Fixed expenses that DON'T have an override for this month (and aren't overrides themselves)
-  // 2. Variable expenses for this month (not overrides)
-  // 3. Overrides for this month (have overrides_expense_id set) - but NOT deleted ones
   const query = `
-    SELECT e.*, c.name as category_name
-    FROM expenses e
-    LEFT JOIN categories c ON e.category_id = c.id
-    WHERE 
-      -- Fixed expenses without an override for this month (and not an override itself)
-      (e.expense_type = 'fixed' AND e.overrides_expense_id IS NULL AND e.year_month IS NULL
-       AND e.id NOT IN (SELECT overrides_expense_id FROM expenses WHERE year_month = ? AND overrides_expense_id IS NOT NULL))
-      -- Variable expenses for this month (not overrides)
-      OR (e.expense_type = 'variable' AND e.year_month = ? AND e.overrides_expense_id IS NULL)
-      -- Fixed overrides for this month (excluding deleted ones)
-      OR (e.expense_type = 'fixed' AND e.overrides_expense_id IS NOT NULL AND e.year_month = ? AND (e.is_deleted IS NULL OR e.is_deleted = 0))
-    ORDER BY e.expense_type = 'fixed' DESC, e.payment_method, e.name COLLATE NOCASE
-  `;
+        SELECT e.*, c.name as category_name
+        FROM expenses e
+        LEFT JOIN categories c ON e.category_id = c.id
+        WHERE 
+            -- Fixed expenses without an override for this month (and not an override itself)
+            (e.expense_type = 'fixed' AND e.overrides_expense_id IS NULL AND e.year_month IS NULL
+             AND e.id NOT IN (SELECT overrides_expense_id FROM expenses WHERE year_month = ? AND overrides_expense_id IS NOT NULL))
+            -- Variable expenses for this month (not overrides)
+            OR (e.expense_type = 'variable' AND e.year_month = ? AND e.overrides_expense_id IS NULL)
+            -- Fixed overrides for this month (excluding deleted ones)
+            OR (e.expense_type = 'fixed' AND e.overrides_expense_id IS NOT NULL AND e.year_month = ? AND (e.is_deleted IS NULL OR e.is_deleted = 0))
+        ORDER BY e.expense_type = 'fixed' DESC, e.payment_method, e.name COLLATE NOCASE
+    `;
 
   return db.prepare(query).all(yearMonth, yearMonth, yearMonth);
 }
 
 export function getExpenseById(id: number) {
   return db.prepare(`
-    SELECT e.*, c.name as category_name
-    FROM expenses e
-    LEFT JOIN categories c ON e.category_id = c.id
-    WHERE e.id = ?
-  `).get(id);
+        SELECT e.*, c.name as category_name
+        FROM expenses e
+        LEFT JOIN categories c ON e.category_id = c.id
+        WHERE e.id = ?
+    `).get(id);
 }
 
 const capitalizedName = (name: string) => name.charAt(0).toUpperCase() + name.slice(1);
 
 export function createExpense(data: any) {
   const result = db.prepare(`
-    INSERT INTO expenses (name, amount, category_id, expense_type, payment_method, payment_status, year_month, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(
+        INSERT INTO expenses (name, amount, category_id, expense_type, payment_method, payment_status, year_month, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
     capitalizedName(data.name),
     data.amount,
     data.category_id ?? null,
@@ -142,19 +158,12 @@ export function createExpense(data: any) {
   return getExpenseById(Number(result.lastInsertRowid));
 }
 
-export function updateExpense(id: number, updates: any) {
-  const sets = [];
-  const params = [];
+export function updateExpense(id: number, updates: Partial<Record<ExpenseField, any>>) {
+  const { sql, params } = buildSafeUpdate(ALLOWED_EXPENSE_FIELDS, updates);
 
-  for (const [key, value] of Object.entries(updates)) {
-    if (key === 'id') continue;
-    sets.push(`${key} = ?`);
-    params.push(value);
-  }
-
-  if (sets.length > 0) {
+  if (sql) {
     params.push(id);
-    db.prepare(`UPDATE expenses SET ${sets.join(', ')} WHERE id = ?`).run(...params);
+    db.prepare(`UPDATE expenses SET ${sql} WHERE id = ?`).run(...params);
   }
 
   return getExpenseById(id);
@@ -167,18 +176,15 @@ export function deleteExpense(id: number): boolean {
 
 // Create or update an override for a fixed expense
 export function createExpenseOverride(originalExpenseId: number, yearMonth: number, overrideData: any) {
-  // Check if override already exists for this month
   const existing = db.prepare(`
-    SELECT id FROM expenses 
-    WHERE overrides_expense_id = ? AND year_month = ?
-  `).get(originalExpenseId, yearMonth) as { id: number } | undefined;
+        SELECT id FROM expenses 
+        WHERE overrides_expense_id = ? AND year_month = ?
+    `).get(originalExpenseId, yearMonth) as { id: number } | undefined;
 
   if (existing) {
-    // Update existing override
     return updateExpense(existing.id, overrideData);
   }
 
-  // Get original expense to inherit name/category if not provided
   const original = getExpenseById(originalExpenseId) as any;
   if (!original) throw new Error('Original expense not found');
 
@@ -186,11 +192,10 @@ export function createExpenseOverride(originalExpenseId: number, yearMonth: numb
   const finalCategoryId = overrideData.category_id !== undefined ? overrideData.category_id : original.category_id;
   const finalPaymentMethod = overrideData.payment_method || original.payment_method;
 
-  // Create new override - keep expense_type as 'fixed' so it shows in fixed section
   const result = db.prepare(`
-    INSERT INTO expenses (name, amount, category_id, expense_type, payment_method, payment_status, year_month, overrides_expense_id, created_at)
-    VALUES (?, ?, ?, 'fixed', ?, ?, ?, ?, ?)
-  `).run(
+        INSERT INTO expenses (name, amount, category_id, expense_type, payment_method, payment_status, year_month, overrides_expense_id, created_at)
+        VALUES (?, ?, ?, 'fixed', ?, ?, ?, ?, ?)
+    `).run(
     capitalizedName(finalName),
     overrideData.amount,
     finalCategoryId,
@@ -204,29 +209,24 @@ export function createExpenseOverride(originalExpenseId: number, yearMonth: numb
   return getExpenseById(Number(result.lastInsertRowid));
 }
 
-// Create a "deleted" override to hide a fixed expense for a specific month
 export function createDeletedOverride(originalExpenseId: number, yearMonth: number) {
-  // Check if override already exists for this month
   const existing = db.prepare(`
-    SELECT id FROM expenses 
-    WHERE overrides_expense_id = ? AND year_month = ?
-  `).get(originalExpenseId, yearMonth) as { id: number } | undefined;
+        SELECT id FROM expenses 
+        WHERE overrides_expense_id = ? AND year_month = ?
+    `).get(originalExpenseId, yearMonth) as { id: number } | undefined;
 
   if (existing) {
-    // Update existing override to be deleted
     db.prepare('UPDATE expenses SET is_deleted = 1 WHERE id = ?').run(existing.id);
     return getExpenseById(existing.id);
   }
 
-  // Get original expense
   const original = getExpenseById(originalExpenseId) as any;
   if (!original) throw new Error('Original expense not found');
 
-  // Create new "deleted" override
   const result = db.prepare(`
-    INSERT INTO expenses (name, amount, category_id, expense_type, payment_method, payment_status, year_month, overrides_expense_id, is_deleted, created_at)
-    VALUES (?, ?, ?, 'fixed', ?, ?, ?, ?, 1, ?)
-  `).run(
+        INSERT INTO expenses (name, amount, category_id, expense_type, payment_method, payment_status, year_month, overrides_expense_id, is_deleted, created_at)
+        VALUES (?, ?, ?, 'fixed', ?, ?, ?, ?, 1, ?)
+    `).run(
     original.name,
     original.amount,
     original.category_id,
