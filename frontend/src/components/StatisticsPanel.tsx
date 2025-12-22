@@ -77,7 +77,7 @@ export function StatisticsPanel({ currentMonth }: StatisticsPanelProps) {
     const categoryTotals: Record<string, number> = {};
     stats.forEach(s => {
         Object.entries(s.byCategory || {}).forEach(([cat, amount]) => {
-            categoryTotals[cat] = (categoryTotals[cat] || 0) + amount;
+            categoryTotals[cat] = (categoryTotals[cat] || 0) + (amount as number);
         });
     });
 

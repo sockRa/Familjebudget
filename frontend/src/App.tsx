@@ -105,8 +105,8 @@ function App() {
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (showExpenseModal || showIncomeModal || confirmDialog.isOpen) return;
-            if (e.key === 'ArrowLeft') setCurrentMonth(m => addMonths(m, -1));
-            if (e.key === 'ArrowRight') setCurrentMonth(m => addMonths(m, 1));
+            if (e.key === 'ArrowLeft') setCurrentMonth((m: number) => addMonths(m, -1));
+            if (e.key === 'ArrowRight') setCurrentMonth((m: number) => addMonths(m, 1));
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
@@ -136,10 +136,10 @@ function App() {
             if (Math.abs(diff) > minSwipeDistance) {
                 if (diff > 0) {
                     // Swipe left -> next month
-                    setCurrentMonth(m => addMonths(m, 1));
+                    setCurrentMonth((m: number) => addMonths(m, 1));
                 } else {
                     // Swipe right -> previous month
-                    setCurrentMonth(m => addMonths(m, -1));
+                    setCurrentMonth((m: number) => addMonths(m, -1));
                 }
             }
 
@@ -296,7 +296,7 @@ function App() {
                 <h1>💰 Familjebudget</h1>
                 <div className="header-controls">
                     <div className="month-selector">
-                        <button className="btn btn-secondary" onClick={() => setCurrentMonth(m => addMonths(m, -1))}>
+                        <button className="btn btn-secondary" onClick={() => setCurrentMonth((m: number) => addMonths(m, -1))}>
                             ◀
                         </button>
                         <div className="current-month-container">
@@ -311,7 +311,7 @@ function App() {
                                 </button>
                             )}
                         </div>
-                        <button className="btn btn-secondary" onClick={() => setCurrentMonth(m => addMonths(m, 1))}>
+                        <button className="btn btn-secondary" onClick={() => setCurrentMonth((m: number) => addMonths(m, 1))}>
                             ▶
                         </button>
                     </div>
