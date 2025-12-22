@@ -11,21 +11,21 @@ import {
 import type { Income, Expense } from './types.js';
 
 const mockIncomes: Income[] = [
-    { id: 1, name: 'Lön', owner: 'jag', amount: 30000 },
-    { id: 2, name: 'Lön', owner: 'fruga', amount: 25000 },
-    { id: 3, name: 'Barnbidrag', owner: 'jag', amount: 1250 },
+    { id: 1, name: 'Lön', owner: 'jag', amount: 30000, year_month: 202412 },
+    { id: 2, name: 'Lön', owner: 'fruga', amount: 25000, year_month: 202412 },
+    { id: 3, name: 'Barnbidrag', owner: 'jag', amount: 1250, year_month: 202412 },
 ];
 
 const mockExpenses: Expense[] = [
     // Fixed expenses
-    { id: 1, name: 'Hyra', amount: 12000, category_id: 1, expense_type: 'fixed', payment_method: 'autogiro_gemensamt', payment_status: 'unpaid', year_month: null, created_at: '' },
-    { id: 2, name: 'El', amount: 800, category_id: 1, expense_type: 'fixed', payment_method: 'efaktura_gemensamt', payment_status: 'unpaid', year_month: null, created_at: '' },
-    { id: 3, name: 'Spotify', amount: 179, category_id: 4, expense_type: 'fixed', payment_method: 'autogiro_jag', payment_status: 'paid', year_month: null, created_at: '' },
-    { id: 4, name: 'Netflix', amount: 169, category_id: 4, expense_type: 'fixed', payment_method: 'autogiro_fruga', payment_status: 'paid', year_month: null, created_at: '' },
+    { id: 1, name: 'Hyra', amount: 12000, category_id: 1, expense_type: 'fixed', payment_method: 'autogiro_gemensamt', payment_status: 'unpaid', year_month: null, overrides_expense_id: null, created_at: '' },
+    { id: 2, name: 'El', amount: 800, category_id: 1, expense_type: 'fixed', payment_method: 'efaktura_gemensamt', payment_status: 'unpaid', year_month: null, overrides_expense_id: null, created_at: '' },
+    { id: 3, name: 'Spotify', amount: 179, category_id: 4, expense_type: 'fixed', payment_method: 'autogiro_jag', payment_status: 'paid', year_month: null, overrides_expense_id: null, created_at: '' },
+    { id: 4, name: 'Netflix', amount: 169, category_id: 4, expense_type: 'fixed', payment_method: 'autogiro_fruga', payment_status: 'paid', year_month: null, overrides_expense_id: null, created_at: '' },
     // Variable expenses for December 2024
-    { id: 5, name: 'Julklappar', amount: 3000, category_id: 6, expense_type: 'variable', payment_method: 'efaktura_jag', payment_status: 'pending', year_month: 202412, created_at: '' },
+    { id: 5, name: 'Julklappar', amount: 3000, category_id: 6, expense_type: 'variable', payment_method: 'efaktura_jag', payment_status: 'pending', year_month: 202412, overrides_expense_id: null, created_at: '' },
     // Variable expenses for January 2025
-    { id: 6, name: 'Nyårsfest', amount: 500, category_id: 4, expense_type: 'variable', payment_method: 'efaktura_gemensamt', payment_status: 'unpaid', year_month: 202501, created_at: '' },
+    { id: 6, name: 'Nyårsfest', amount: 500, category_id: 4, expense_type: 'variable', payment_method: 'efaktura_gemensamt', payment_status: 'unpaid', year_month: 202501, overrides_expense_id: null, created_at: '' },
 ];
 
 describe('calculateTotalIncome', () => {
@@ -144,13 +144,13 @@ describe('Regression: Multi-month Override Filtering', () => {
                 id: 1, name: 'Normal Fixed', amount: 1000,
                 category_id: 1,
                 expense_type: 'fixed', payment_method: 'autogiro_gemensamt',
-                payment_status: 'unpaid', year_month: null, created_at: ''
+                payment_status: 'unpaid', year_month: null, overrides_expense_id: null, created_at: ''
             },
             {
                 id: 2, name: 'Override Other Month', amount: 500,
                 category_id: 1,
                 expense_type: 'fixed', payment_method: 'autogiro_gemensamt',
-                payment_status: 'unpaid', year_month: 202412, created_at: ''
+                payment_status: 'unpaid', year_month: 202412, overrides_expense_id: null, created_at: ''
             }
         ];
 
