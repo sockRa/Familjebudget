@@ -22,4 +22,4 @@ export {
     getCurrentYearMonth,
     addMonths,
     isCurrentMonth,
-} from '../../shared/types.js';
+} from './shared/types.js';

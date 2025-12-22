@@ -12,4 +12,4 @@ export {
     type MonthlyStats,
     DEFAULT_SETTINGS,
     PAYMENT_METHODS,
-} from '../../shared/types.js';
+} from './shared/types.js';

@@ -8,21 +8,15 @@
         "strict": true,
         "skipLibCheck": true,
         "outDir": "dist",
-        "rootDir": "..",
+        "rootDir": "src",
         "declaration": true,
         "types": [
             "node"
         ],
-        "paths": {
-            "@shared/*": [
-                "../shared/*"
-            ]
-        },
         "baseUrl": "."
     },
     "include": [
-        "src/**/*",
-        "../shared/**/*"
+        "src/**/*"
     ],
     "exclude": [
         "node_modules",

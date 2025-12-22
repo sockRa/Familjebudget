@@ -1,25 +1,19 @@
 # Build stage for frontend
 FROM node:20-alpine AS frontend-build
-WORKDIR /app
-# Copy shared types first
-COPY shared/ ./shared/
-# Copy frontend
 WORKDIR /app/frontend
 COPY frontend/package*.json ./
 RUN npm ci
 COPY frontend/ ./
+# Shared types are now inside frontend/src/shared
 RUN npm run build
 
 # Build stage for backend
 FROM node:20-alpine AS backend-build
-WORKDIR /app
-# Copy shared types first
-COPY shared/ ./shared/
-# Copy backend
 WORKDIR /app/backend
 COPY backend/package*.json ./
 RUN npm ci
 COPY backend/ ./
+# Shared types are now inside backend/src/shared
 RUN npm run build
 
 # Production stage
