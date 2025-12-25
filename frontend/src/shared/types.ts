@@ -1,3 +1,6 @@
+// AUTO-GENERATED: Do not edit directly. Edit shared/ instead.
+// Run 'npm run sync-types' from project root to regenerate.
+
 // Shared types between frontend and backend
 
 export type Owner = 'jag' | 'fruga';

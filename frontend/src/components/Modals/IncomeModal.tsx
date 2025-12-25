@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Income, formatYearMonth } from '../../types';
+import { IncomeFormSchema, validateForm } from '../../shared/validation';
 
 interface Settings {
     person1Name: string;
@@ -24,15 +25,27 @@ export function IncomeModal({
     const [name, setName] = useState(income?.name || '');
     const [owner, setOwner] = useState<'jag' | 'fruga'>(income?.owner as 'jag' | 'fruga' || 'jag');
     const [amount, setAmount] = useState(income?.amount?.toString() || '');
+    const [errors, setErrors] = useState<Record<string, string>>({});
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        onSave({
-            name,
+
+        const formData = {
+            name: name.trim(),
             owner,
-            amount: parseFloat(amount),
+            amount: amount,
             year_month: currentMonth
-        });
+        };
+
+        const result = validateForm(IncomeFormSchema, formData);
+
+        if (!result.success) {
+            setErrors(result.errors);
+            return;
+        }
+
+        setErrors({});
+        onSave(result.data as { name: string; owner: 'jag' | 'fruga'; amount: number; year_month: number });
     };
 
     return (
@@ -48,12 +61,12 @@ export function IncomeModal({
                             <label className="form-label">Namn</label>
                             <input
                                 type="text"
-                                className="form-input"
+                                className={`form-input ${errors.name ? 'error' : ''}`}
                                 value={name}
-                                onChange={e => setName(e.target.value)}
+                                onChange={e => { setName(e.target.value); setErrors(prev => ({ ...prev, name: '' })); }}
                                 placeholder="T.ex. Lön, Barnbidrag..."
-                                required
                             />
+                            {errors.name && <span className="form-error">{errors.name}</span>}
                         </div>
                         <div className="form-row">
                             <div className="form-group">
@@ -71,14 +84,14 @@ export function IncomeModal({
                                 <label className="form-label">Belopp (kr)</label>
                                 <input
                                     type="number"
-                                    className="form-input"
+                                    className={`form-input ${errors.amount ? 'error' : ''}`}
                                     value={amount}
-                                    onChange={e => setAmount(e.target.value)}
+                                    onChange={e => { setAmount(e.target.value); setErrors(prev => ({ ...prev, amount: '' })); }}
                                     placeholder="0"
                                     min="0"
                                     step="0.01"
-                                    required
                                 />
+                                {errors.amount && <span className="form-error">{errors.amount}</span>}
                             </div>
                         </div>
                         <div style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)', marginTop: 'var(--space-sm)' }}>

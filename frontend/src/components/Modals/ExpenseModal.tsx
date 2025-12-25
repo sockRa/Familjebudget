@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Category, Expense } from '../../types';
 import { categoriesApi } from '../../api';
+import { ExpenseFormSchema, validateForm } from '../../shared/validation';
 
 interface Settings {
     person1Name: string;
@@ -34,6 +35,9 @@ export function ExpenseModal({
     const [isTransfer, setIsTransfer] = useState(expense?.is_transfer === 1);
     const paymentStatus = expense?.payment_status || 'unpaid';
 
+    // Validation errors
+    const [errors, setErrors] = useState<Record<string, string>>({});
+
     // New category creation
     const [showNewCategory, setShowNewCategory] = useState(false);
     const [newCategoryName, setNewCategoryName] = useState('');
@@ -41,14 +45,27 @@ export function ExpenseModal({
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        onSave({
+
+        const formData = {
             name: name.trim(),
-            amount: parseFloat(amount),
+            amount: amount,
             category_id: categoryId ? parseInt(categoryId) : null,
             expense_type: expenseType,
             payment_method: paymentMethod,
             payment_status: paymentStatus,
             is_transfer: isTransfer ? 1 : 0,
+        };
+
+        const result = validateForm(ExpenseFormSchema, formData);
+
+        if (!result.success) {
+            setErrors(result.errors);
+            return;
+        }
+
+        setErrors({});
+        onSave({
+            ...result.data,
             year_month: expenseType === 'variable' ? currentMonth : null,
         });
     };
@@ -94,25 +111,25 @@ export function ExpenseModal({
                             <label className="form-label">Namn</label>
                             <input
                                 type="text"
-                                className="form-input"
+                                className={`form-input ${errors.name ? 'error' : ''}`}
                                 value={name}
-                                onChange={e => setName(e.target.value)}
+                                onChange={e => { setName(e.target.value); setErrors(prev => ({ ...prev, name: '' })); }}
                                 placeholder="T.ex. Hyra, Netflix..."
-                                required
                             />
+                            {errors.name && <span className="form-error">{errors.name}</span>}
                         </div>
                         <div className="form-group">
                             <label className="form-label">Belopp (kr)</label>
                             <input
                                 type="number"
-                                className="form-input"
+                                className={`form-input ${errors.amount ? 'error' : ''}`}
                                 value={amount}
-                                onChange={e => setAmount(e.target.value)}
+                                onChange={e => { setAmount(e.target.value); setErrors(prev => ({ ...prev, amount: '' })); }}
                                 placeholder="0"
                                 min="0"
                                 step="0.01"
-                                required
                             />
+                            {errors.amount && <span className="form-error">{errors.amount}</span>}
                         </div>
 
                         <div className="form-row" style={{ gap: 'var(--space-md)' }}>

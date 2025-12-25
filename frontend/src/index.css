@@ -615,6 +615,23 @@ body {
   gap: var(--space-md);
 }
 
+.form-input.error,
+.form-select.error {
+  border-color: var(--color-danger);
+}
+
+.form-input.error:focus,
+.form-select.error:focus {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+}
+
+.form-error {
+  color: var(--color-danger);
+  font-size: var(--text-sm);
+  margin-top: var(--space-xs);
+  display: block;
+}
+
 /* ========================================
    MODAL
    ======================================== */
