@@ -20,10 +20,6 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// Rate limiting
-import { rateLimits } from './middleware/rateLimit.js';
-app.use('/api', rateLimits.standard);
-
 // API Routes
 app.use('/api/categories', categoriesRouter);
 app.use('/api/incomes', incomesRouter);
