@@ -28,6 +28,8 @@ function App() {
     const [currentMonth, setCurrentMonth] = useState(getCurrentYearMonth());
     const [isLoading, setIsLoading] = useState(true);
     const [isGroupingByCategory, setIsGroupingByCategory] = useState(true);
+    const [statusFilter, setStatusFilter] = useState<PaymentStatus | 'all'>('all');
+    const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
 
     // Data
     const [categories, setCategories] = useState<Category[]>([]);
@@ -170,8 +172,18 @@ function App() {
         setConfirmDialog(prev => ({ ...prev, isOpen: false }));
     };
 
-    const fixedExpenses = expenses.filter(e => e.expense_type === 'fixed');
-    const variableExpenses = expenses.filter(e => e.expense_type === 'variable');
+    // Filter by status
+    const filterByStatus = (exps: Expense[]) => {
+        if (statusFilter === 'all') return exps;
+        return exps.filter(e => e.payment_status === statusFilter);
+    };
+
+    const toggleSection = (sectionId: string) => {
+        setCollapsedSections(prev => ({ ...prev, [sectionId]: !prev[sectionId] }));
+    };
+
+    const fixedExpenses = filterByStatus(expenses.filter(e => e.expense_type === 'fixed'));
+    const variableExpenses = filterByStatus(expenses.filter(e => e.expense_type === 'variable'));
 
     const groupByPaymentMethod = (exps: Expense[]) => {
         const groups: Record<string, Expense[]> = {};
@@ -389,61 +401,104 @@ function App() {
                 <>
                     <SummaryCards overview={overview} settings={settings} />
 
+                    {/* Status filter */}
+                    <div className="filter-bar">
+                        <span style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>Filter:</span>
+                        <button
+                            className={`btn btn-filter ${statusFilter === 'all' ? 'active' : ''}`}
+                            onClick={() => setStatusFilter('all')}
+                        >
+                            Alla
+                        </button>
+                        <button
+                            className={`btn btn-filter ${statusFilter === 'unpaid' ? 'active' : ''}`}
+                            onClick={() => setStatusFilter('unpaid')}
+                        >
+                            ❌ Obetalda
+                        </button>
+                        <button
+                            className={`btn btn-filter ${statusFilter === 'pending' ? 'active' : ''}`}
+                            onClick={() => setStatusFilter('pending')}
+                        >
+                            ⏳ Pågående
+                        </button>
+                        <button
+                            className={`btn btn-filter ${statusFilter === 'paid' ? 'active' : ''}`}
+                            onClick={() => setStatusFilter('paid')}
+                        >
+                            ✅ Betalda
+                        </button>
+                    </div>
+
                     {/* Fixed expenses */}
                     <div className="expense-section">
-                        <div className="section-header">
-                            <span className="section-title">Fasta utgifter</span>
+                        <div
+                            className="section-header clickable"
+                            onClick={() => toggleSection('fixed')}
+                        >
+                            <span className="section-title">
+                                {collapsedSections['fixed'] ? '▶' : '▼'} Fasta utgifter
+                            </span>
                             <span className="section-total">
                                 {formatCurrency(fixedExpenses.reduce((s, e) => s + e.amount, 0))}
                             </span>
                         </div>
-                        {Object.entries(groupByPaymentMethod(fixedExpenses)).map(([method, exps]) => (
-                            <div key={method} style={{ marginBottom: 'var(--space-md)' }}>
-                                <div style={{
-                                    fontSize: 'var(--text-sm)',
-                                    color: 'var(--color-text-muted)',
-                                    marginBottom: 'var(--space-xs)',
-                                    paddingLeft: 'var(--space-sm)'
-                                }}>
-                                    {getPaymentMethodLabel(method as any, settings)}
-                                </div>
-                                <div className="expense-list">
-                                    {exps.map(expense => (
-                                        <ExpenseItem
-                                            key={expense.id}
-                                            expense={expense}
-                                            settings={settings}
-                                            onEdit={(e) => { setEditingExpense(e); setShowExpenseModal(true); }}
-                                            onDelete={handleDeleteExpense}
-                                            onToggleStatus={handleToggleStatus}
-                                        />
-                                    ))}
-                                </div>
-                            </div>
-                        ))}
-                        {fixedExpenses.length === 0 && (
-                            <div className="empty-state">
-                                <div className="empty-state-icon">📝</div>
-                                <p>Inga fasta utgifter ännu</p>
-                            </div>
+                        {!collapsedSections['fixed'] && (
+                            <>
+                                {Object.entries(groupByPaymentMethod(fixedExpenses)).map(([method, exps]) => (
+                                    <div key={method} style={{ marginBottom: 'var(--space-md)' }}>
+                                        <div style={{
+                                            fontSize: 'var(--text-sm)',
+                                            color: 'var(--color-text-muted)',
+                                            marginBottom: 'var(--space-xs)',
+                                            paddingLeft: 'var(--space-sm)'
+                                        }}>
+                                            {getPaymentMethodLabel(method as any, settings)}
+                                        </div>
+                                        <div className="expense-list">
+                                            {exps.map(expense => (
+                                                <ExpenseItem
+                                                    key={expense.id}
+                                                    expense={expense}
+                                                    settings={settings}
+                                                    onEdit={(e) => { setEditingExpense(e); setShowExpenseModal(true); }}
+                                                    onDelete={handleDeleteExpense}
+                                                    onToggleStatus={handleToggleStatus}
+                                                />
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                                {fixedExpenses.length === 0 && (
+                                    <div className="empty-state">
+                                        <div className="empty-state-icon">📝</div>
+                                        <p>Inga fasta utgifter{statusFilter !== 'all' ? ' med denna status' : ' ännu'}</p>
+                                    </div>
+                                )}
+                            </>
                         )}
                     </div>
 
                     {/* Variable expenses */}
                     <div className="expense-section">
-                        <div className="section-header">
-                            <span className="section-title">Variabla utgifter</span>
+                        <div
+                            className="section-header clickable"
+                            onClick={() => toggleSection('variable')}
+                        >
+                            <span className="section-title">
+                                {collapsedSections['variable'] ? '▶' : '▼'} Variabla utgifter
+                            </span>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}>
                                 <button
                                     className={`btn btn-secondary ${!isGroupingByCategory ? 'active' : ''}`}
-                                    onClick={() => setIsGroupingByCategory(false)}
+                                    onClick={(e) => { e.stopPropagation(); setIsGroupingByCategory(false); }}
                                     style={{ fontSize: 'var(--text-xs)', padding: '2px 8px' }}
                                 >
                                     Lista
                                 </button>
                                 <button
                                     className={`btn btn-secondary ${isGroupingByCategory ? 'active' : ''}`}
-                                    onClick={() => setIsGroupingByCategory(true)}
+                                    onClick={(e) => { e.stopPropagation(); setIsGroupingByCategory(true); }}
                                     style={{ fontSize: 'var(--text-xs)', padding: '2px 8px' }}
                                 >
                                     Kategori
@@ -454,20 +509,37 @@ function App() {
                             </div>
                         </div>
 
-                        {isGroupingByCategory ? (
-                            Object.entries(groupByCategory(variableExpenses)).map(([catName, exps]) => (
-                                <div key={catName} style={{ marginBottom: 'var(--space-md)' }}>
-                                    <div style={{
-                                        fontSize: 'var(--text-sm)',
-                                        color: 'var(--color-text-muted)',
-                                        marginBottom: 'var(--space-xs)',
-                                        paddingLeft: 'var(--space-sm)',
-                                        fontWeight: 600
-                                    }}>
-                                        {catName}
-                                    </div>
+                        {!collapsedSections['variable'] && (
+                            <>
+                                {isGroupingByCategory ? (
+                                    Object.entries(groupByCategory(variableExpenses)).map(([catName, exps]) => (
+                                        <div key={catName} style={{ marginBottom: 'var(--space-md)' }}>
+                                            <div style={{
+                                                fontSize: 'var(--text-sm)',
+                                                color: 'var(--color-text-muted)',
+                                                marginBottom: 'var(--space-xs)',
+                                                paddingLeft: 'var(--space-sm)',
+                                                fontWeight: 600
+                                            }}>
+                                                {catName}
+                                            </div>
+                                            <div className="expense-list">
+                                                {exps.map(expense => (
+                                                    <ExpenseItem
+                                                        key={expense.id}
+                                                        expense={expense}
+                                                        settings={settings}
+                                                        onEdit={(e) => { setEditingExpense(e); setShowExpenseModal(true); }}
+                                                        onDelete={handleDeleteExpense}
+                                                        onToggleStatus={handleToggleStatus}
+                                                    />
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
                                     <div className="expense-list">
-                                        {exps.map(expense => (
+                                        {variableExpenses.map(expense => (
                                             <ExpenseItem
                                                 key={expense.id}
                                                 expense={expense}
@@ -478,28 +550,15 @@ function App() {
                                             />
                                         ))}
                                     </div>
-                                </div>
-                            ))
-                        ) : (
-                            <div className="expense-list">
-                                {variableExpenses.map(expense => (
-                                    <ExpenseItem
-                                        key={expense.id}
-                                        expense={expense}
-                                        settings={settings}
-                                        onEdit={(e) => { setEditingExpense(e); setShowExpenseModal(true); }}
-                                        onDelete={handleDeleteExpense}
-                                        onToggleStatus={handleToggleStatus}
-                                    />
-                                ))}
-                            </div>
-                        )}
+                                )}
 
-                        {variableExpenses.length === 0 && (
-                            <div className="empty-state">
-                                <div className="empty-state-icon">📦</div>
-                                <p>Inga variabla utgifter denna månad</p>
-                            </div>
+                                {variableExpenses.length === 0 && (
+                                    <div className="empty-state">
+                                        <div className="empty-state-icon">📦</div>
+                                        <p>Inga variabla utgifter{statusFilter !== 'all' ? ' med denna status' : ' denna månad'}</p>
+                                    </div>
+                                )}
+                            </>
                         )}
                     </div>
 
