@@ -52,6 +52,8 @@ function App() {
         message: string;
         onConfirm: () => void;
         variant?: 'danger' | 'warning' | 'info';
+        secondaryConfirmText?: string;
+        onSecondaryConfirm?: () => void;
     }>({ isOpen: false, title: '', message: '', onConfirm: () => { } });
 
     // Ref for main app container
@@ -196,32 +198,40 @@ function App() {
         const expense = expenses.find(e => e.id === id);
         if (!expense) return;
 
-        // For fixed expenses without override, only hide for current month
+        // For fixed expenses without override, give option to delete permanently or just for this month
         const isBaseFixedExpense = expense.expense_type === 'fixed' && !expense.overrides_expense_id;
-        const message = isBaseFixedExpense
-            ? 'Denna fasta utgift tas bort för denna månad. Den kommer fortfarande synas i andra månader.'
-            : 'Är du säker på att du vill ta bort denna utgift?';
 
-        showConfirm(
-            'Ta bort utgift',
-            message,
-            async () => {
-                try {
-                    if (isBaseFixedExpense) {
-                        // Hide fixed expense for this month only
-                        await expensesApi.hideForMonth(id, currentMonth);
-                    } else {
-                        // Variable expense or override - delete it completely
-                        await expensesApi.delete(id);
-                    }
-                    loadData();
-                } catch (err) {
-                    console.error('Failed to delete expense:', err);
-                    setError('Kunde inte ta bort utgift.');
+        const deleteAction = async (permanent: boolean) => {
+            try {
+                if (isBaseFixedExpense && !permanent) {
+                    await expensesApi.hideForMonth(id, currentMonth);
+                } else {
+                    await expensesApi.delete(id);
                 }
-                closeConfirm();
+                loadData();
+            } catch (err) {
+                console.error('Failed to delete expense:', err);
+                setError('Kunde inte ta bort utgift.');
             }
-        );
+            closeConfirm();
+        };
+
+        if (isBaseFixedExpense) {
+            setConfirmDialog({
+                isOpen: true,
+                title: 'Ta bort fast utgift',
+                message: 'Vill du ta bort denna utgift permanent (alla månader) eller bara för denna månad?',
+                onConfirm: () => deleteAction(true),
+                secondaryConfirmText: 'Endast denna månad',
+                onSecondaryConfirm: () => deleteAction(false),
+            });
+        } else {
+            showConfirm(
+                'Ta bort utgift',
+                'Är du säker på att du vill ta bort denna utgift?',
+                () => deleteAction(true)
+            );
+        }
     };
 
     const handleToggleStatus = async (id: number, status: PaymentStatus) => {
@@ -630,6 +640,9 @@ function App() {
                 onConfirm={confirmDialog.onConfirm}
                 onCancel={closeConfirm}
                 variant={confirmDialog.variant}
+                confirmText="Ta bort permanent"
+                secondaryConfirmText={confirmDialog.secondaryConfirmText}
+                onSecondaryConfirm={confirmDialog.onSecondaryConfirm}
             />
         </div>
     );

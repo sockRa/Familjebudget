@@ -9,6 +9,9 @@ interface ConfirmDialogProps {
     variant?: 'danger' | 'warning' | 'info';
     confirmText?: string;
     cancelText?: string;
+    // Optional secondary action
+    secondaryConfirmText?: string;
+    onSecondaryConfirm?: () => void;
 }
 
 export function ConfirmDialog({
@@ -20,6 +23,8 @@ export function ConfirmDialog({
     variant = 'danger',
     confirmText = 'Ta bort',
     cancelText = 'Avbryt',
+    secondaryConfirmText,
+    onSecondaryConfirm,
 }: ConfirmDialogProps) {
     const dialogRef = useRef<HTMLDivElement>(null);
 
@@ -69,10 +74,15 @@ export function ConfirmDialog({
                 <div className="confirm-icon">{icon}</div>
                 <h3 className="confirm-title">{title}</h3>
                 <p className="confirm-message">{message}</p>
-                <div className="confirm-actions">
+                <div className="confirm-actions" style={{ flexWrap: 'wrap', gap: 'var(--space-sm)' }}>
                     <button className="btn btn-secondary" onClick={onCancel}>
                         {cancelText}
                     </button>
+                    {secondaryConfirmText && onSecondaryConfirm && (
+                        <button className="btn btn-secondary" onClick={onSecondaryConfirm}>
+                            {secondaryConfirmText}
+                        </button>
+                    )}
                     <button className={`btn ${buttonClass}`} onClick={onConfirm}>
                         {confirmText}
                     </button>
