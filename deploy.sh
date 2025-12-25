@@ -21,12 +21,19 @@ fi
 echo "📥 Pulling latest changes from git..."
 git pull
 
-# Rebuild and restart containers
-# Using 'docker compose' (V2) as it's the modern standard. 
-# If you have an older version, you might need 'docker-compose'.
-echo "🔄 Rebuilding and restarting Docker containers..."
-docker compose down
-docker compose up -d --build
+# Determine which docker compose command to use
+if docker compose version &> /dev/null; then
+    DOCKER_COMPOSE_CMD="docker compose"
+elif command -v docker-compose &> /dev/null; then
+    DOCKER_COMPOSE_CMD="docker-compose"
+else
+    echo "❌ Neither 'docker compose' nor 'docker-compose' found."
+    exit 1
+fi
+
+echo "🔄 Rebuilding and restarting Docker containers using $DOCKER_COMPOSE_CMD..."
+$DOCKER_COMPOSE_CMD down
+$DOCKER_COMPOSE_CMD up -d --build
 
 # Cleanup unused images to save space
 echo "🧹 Cleaning up old images..."
