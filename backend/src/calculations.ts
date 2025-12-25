@@ -39,10 +39,10 @@ export function calculateExpensesByPaymentMethod(
     const result: Record<PaymentMethod, number> = {
         efaktura_jag: 0,
         efaktura_fruga: 0,
-        efaktura_gemensamt: 0,
         autogiro_jag: 0,
         autogiro_fruga: 0,
         autogiro_gemensamt: 0,
+        transfer: 0,
     };
 
     expenses
@@ -76,7 +76,7 @@ export function calculateExpensesByPerson(
                 result.jag += expense.amount;
             } else if (expense.payment_method === 'autogiro_fruga' || expense.payment_method === 'efaktura_fruga') {
                 result.fruga += expense.amount;
-            } else if (expense.payment_method === 'autogiro_gemensamt' || expense.payment_method === 'efaktura_gemensamt') {
+            } else if (expense.payment_method === 'autogiro_gemensamt') {
                 result.gemensamt += expense.amount;
             } else {
                 result.gemensamt += expense.amount;
@@ -107,7 +107,7 @@ export function calculateLiquidityByPerson(
                 result.jag += expense.amount;
             } else if (expense.payment_method === 'autogiro_fruga' || expense.payment_method === 'efaktura_fruga') {
                 result.fruga += expense.amount;
-            } else if (expense.payment_method === 'autogiro_gemensamt' || expense.payment_method === 'efaktura_gemensamt') {
+            } else if (expense.payment_method === 'autogiro_gemensamt') {
                 result.gemensamt += expense.amount;
             } else {
                 result.gemensamt += expense.amount;
@@ -128,7 +128,7 @@ export function calculateTransferToJoint(
     const jointTotal = expenses
         .filter(e => (e.expense_type === 'fixed' && e.year_month === null) || e.year_month === yearMonth)
         .filter(e => !e.is_transfer) // Transfers to joint are handled separately or excluded from this specific logic
-        .filter(e => e.payment_method === 'autogiro_gemensamt' || e.payment_method === 'efaktura_gemensamt')
+        .filter(e => e.payment_method === 'autogiro_gemensamt')
         .reduce((sum, e) => sum + e.amount, 0);
 
     return {

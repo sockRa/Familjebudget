@@ -130,6 +130,13 @@ const migrations: Migration[] = [
       }
     },
   },
+  {
+    version: 5,
+    name: 'Remove efaktura_gemensamt payment method',
+    up: () => {
+      db.exec(`UPDATE expenses SET payment_method = 'autogiro_gemensamt' WHERE payment_method = 'efaktura_gemensamt'`);
+    },
+  },
 ];
 
 // Run migrations on startup

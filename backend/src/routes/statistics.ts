@@ -69,10 +69,10 @@ router.get('/monthly', (req: Request, res: Response) => {
         const byPaymentMethod: Record<PaymentMethod, number> = {
             efaktura_jag: 0,
             efaktura_fruga: 0,
-            efaktura_gemensamt: 0,
             autogiro_jag: 0,
             autogiro_fruga: 0,
             autogiro_gemensamt: 0,
+            transfer: 0,
         };
         expenseRows.forEach(e => {
             const method = e.payment_method as PaymentMethod;

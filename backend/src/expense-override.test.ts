@@ -43,7 +43,7 @@ describe('Expense Override System', () => {
                 name: 'Hyra',
                 amount: 10000,
                 expense_type: 'fixed',
-                payment_method: 'efaktura_gemensamt'
+                payment_method: 'autogiro_gemensamt'
             });
 
             const jan = getExpenses(202601) as any[];
@@ -60,7 +60,7 @@ describe('Expense Override System', () => {
                 name: 'Julklappar',
                 amount: 5000,
                 expense_type: 'variable',
-                payment_method: 'efaktura_gemensamt',
+                payment_method: 'autogiro_gemensamt',
                 year_month: 202612
             });
 
@@ -109,13 +109,13 @@ describe('Expense Override System', () => {
                 name: 'Netflix',
                 amount: 179,
                 expense_type: 'fixed',
-                payment_method: 'efaktura_gemensamt'
+                payment_method: 'autogiro_gemensamt'
             }) as Expense;
 
             const override = createExpenseOverride(original.id, 202603, {
                 name: 'Netflix',
                 amount: 199,
-                payment_method: 'efaktura_gemensamt'
+                payment_method: 'autogiro_gemensamt'
             });
 
             expect((override as any).expense_type).toBe('fixed');
@@ -154,13 +154,13 @@ describe('Expense Override System', () => {
                 name: 'El',
                 amount: 500,
                 expense_type: 'fixed',
-                payment_method: 'efaktura_gemensamt'
+                payment_method: 'autogiro_gemensamt'
             }) as Expense;
 
             createExpenseOverride(original.id, 202605, {
                 name: 'El',
                 amount: 800,
-                payment_method: 'efaktura_gemensamt'
+                payment_method: 'autogiro_gemensamt'
             });
 
             // Check multiple months
@@ -184,7 +184,7 @@ describe('Expense Override System', () => {
                 amount: 399,
                 category_id: category_id,
                 expense_type: 'fixed',
-                payment_method: 'efaktura_gemensamt'
+                payment_method: 'autogiro_gemensamt'
             }) as Expense;
 
             const override = createExpenseOverride(original.id, 202606, {
@@ -193,7 +193,7 @@ describe('Expense Override System', () => {
 
             expect(override.name).toBe('Gym');
             expect(override.category_id).toBe(category_id);
-            expect(override.payment_method).toBe('efaktura_gemensamt');
+            expect(override.payment_method).toBe('autogiro_gemensamt');
         });
     });
 });

@@ -63,7 +63,7 @@ describe('Database operations', () => {
                 amount: 200,
                 category_id: cat.id,
                 expense_type: 'variable',
-                payment_method: 'efaktura_gemensamt',
+                payment_method: 'autogiro_gemensamt',
                 year_month: 202310
             });
 

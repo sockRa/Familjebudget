@@ -30,7 +30,7 @@ export function ExpenseModal({
     const [amount, setAmount] = useState(expense?.amount?.toString() || '');
     const [categoryId, setCategoryId] = useState(expense?.category_id?.toString() || '');
     const [expenseType, setExpenseType] = useState(expense?.expense_type || 'fixed');
-    const [paymentMethod, setPaymentMethod] = useState(expense?.payment_method || 'efaktura_gemensamt');
+    const [paymentMethod, setPaymentMethod] = useState(expense?.payment_method || 'autogiro_gemensamt');
     const [isTransfer, setIsTransfer] = useState(expense?.is_transfer === 1);
     const paymentStatus = expense?.payment_status || 'unpaid';
 
@@ -77,7 +77,7 @@ export function ExpenseModal({
         if (checked) {
             setPaymentMethod('transfer');
         } else if (paymentMethod === 'transfer') {
-            setPaymentMethod('efaktura_gemensamt');
+            setPaymentMethod('autogiro_gemensamt');
         }
     };
 
@@ -210,12 +210,11 @@ export function ExpenseModal({
                                 <label className="form-label">Betalningsmetod</label>
                                 <select
                                     className="form-select"
-                                    value={paymentMethod === 'transfer' ? 'efaktura_gemensamt' : paymentMethod}
+                                    value={paymentMethod === 'transfer' ? 'autogiro_gemensamt' : paymentMethod}
                                     onChange={e => setPaymentMethod(e.target.value as any)}
                                 >
                                     <option value="efaktura_jag">📧 E-faktura ({settings.person1Name})</option>
                                     <option value="efaktura_fruga">📧 E-faktura ({settings.person2Name})</option>
-                                    <option value="efaktura_gemensamt">📧 E-faktura (Gemensamt)</option>
                                     <option value="autogiro_jag">🔄 Autogiro ({settings.person1Name})</option>
                                     <option value="autogiro_fruga">🔄 Autogiro ({settings.person2Name})</option>
                                     <option value="autogiro_gemensamt">🔄 Autogiro (Gemensamt)</option>

@@ -6,7 +6,6 @@ export const OwnerSchema = z.enum(['jag', 'fruga']);
 export const PaymentMethodSchema = z.enum([
     'efaktura_jag',
     'efaktura_fruga',
-    'efaktura_gemensamt',
     'autogiro_jag',
     'autogiro_fruga',
     'autogiro_gemensamt',

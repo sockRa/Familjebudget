@@ -402,11 +402,6 @@ body {
   color: var(--color-efaktura-fruga);
 }
 
-.payment-chip.efaktura_gemensamt {
-  background-color: rgba(5, 150, 105, 0.1);
-  color: var(--color-efaktura-gemensamt);
-}
-
 .payment-chip.autogiro_jag {
   background-color: rgba(30, 64, 175, 0.1);
   color: var(--color-autogiro-jag);
@@ -420,6 +415,11 @@ body {
 .payment-chip.autogiro_gemensamt {
   background-color: rgba(6, 78, 59, 0.1);
   color: var(--color-autogiro-gemensamt);
+}
+
+.payment-chip.transfer {
+  background-color: rgba(100, 100, 100, 0.1);
+  color: var(--color-text-secondary);
 }
 
 .expense-name {

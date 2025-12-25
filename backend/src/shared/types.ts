@@ -5,10 +5,10 @@ export type Owner = 'jag' | 'fruga';
 export type PaymentMethod =
     | 'efaktura_jag'
     | 'efaktura_fruga'
-    | 'efaktura_gemensamt'
     | 'autogiro_jag'
     | 'autogiro_fruga'
-    | 'autogiro_gemensamt';
+    | 'autogiro_gemensamt'
+    | 'transfer';
 
 export type ExpenseType = 'fixed' | 'variable';
 
@@ -89,10 +89,10 @@ export const DEFAULT_SETTINGS: Settings = {
 export const PAYMENT_METHODS: PaymentMethod[] = [
     'efaktura_jag',
     'efaktura_fruga',
-    'efaktura_gemensamt',
     'autogiro_jag',
     'autogiro_fruga',
     'autogiro_gemensamt',
+    'transfer',
 ];
 
 export const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
@@ -110,10 +110,10 @@ export const PAYMENT_STATUS_ICONS: Record<PaymentStatus, string> = {
 export const PAYMENT_METHOD_ICONS: Record<PaymentMethod, string> = {
     efaktura_jag: '📄🔵',
     efaktura_fruga: '📄🟣',
-    efaktura_gemensamt: '📄🟢',
     autogiro_jag: '🔵',
     autogiro_fruga: '🟣',
     autogiro_gemensamt: '🟢',
+    transfer: '🔄',
 };
 
 // Helper functions
@@ -124,10 +124,10 @@ export function getPaymentMethodLabel(
     const labels: Record<PaymentMethod, string> = {
         efaktura_jag: `E-faktura (${settings.person1Name})`,
         efaktura_fruga: `E-faktura (${settings.person2Name})`,
-        efaktura_gemensamt: 'E-faktura (Gemensamt)',
         autogiro_jag: `Autogiro (${settings.person1Name})`,
         autogiro_fruga: `Autogiro (${settings.person2Name})`,
         autogiro_gemensamt: 'Autogiro (Gemensamt)',
+        transfer: 'Överföring',
     };
     return labels[method] || method;
 }
