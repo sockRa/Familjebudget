@@ -193,12 +193,27 @@ function App() {
     };
 
     const handleDeleteExpense = (id: number) => {
+        const expense = expenses.find(e => e.id === id);
+        if (!expense) return;
+
+        // For fixed expenses without override, only hide for current month
+        const isBaseFixedExpense = expense.expense_type === 'fixed' && !expense.overrides_expense_id;
+        const message = isBaseFixedExpense
+            ? 'Denna fasta utgift tas bort för denna månad. Den kommer fortfarande synas i andra månader.'
+            : 'Är du säker på att du vill ta bort denna utgift?';
+
         showConfirm(
             'Ta bort utgift',
-            'Är du säker på att du vill ta bort denna utgift?',
+            message,
             async () => {
                 try {
-                    await expensesApi.delete(id);
+                    if (isBaseFixedExpense) {
+                        // Hide fixed expense for this month only
+                        await expensesApi.hideForMonth(id, currentMonth);
+                    } else {
+                        // Variable expense or override - delete it completely
+                        await expensesApi.delete(id);
+                    }
                     loadData();
                 } catch (err) {
                     console.error('Failed to delete expense:', err);
