@@ -190,18 +190,20 @@ export function createExpenseOverride(originalExpenseId: number, yearMonth: numb
   if (!original) throw new Error('Original expense not found');
 
   const finalName = overrideData.name || original.name;
+  const finalAmount = overrideData.amount !== undefined ? overrideData.amount : original.amount;
   const finalCategoryId = overrideData.category_id !== undefined ? overrideData.category_id : original.category_id;
   const finalPaymentMethod = overrideData.payment_method || original.payment_method;
+  const finalPaymentStatus = overrideData.payment_status || original.payment_status || 'unpaid';
 
   const result = db.prepare(`
         INSERT INTO expenses (name, amount, category_id, expense_type, payment_method, payment_status, year_month, overrides_expense_id, is_transfer, created_at)
         VALUES (?, ?, ?, 'fixed', ?, ?, ?, ?, ?, ?)
     `).run(
     capitalizedName(finalName),
-    overrideData.amount,
+    finalAmount,
     finalCategoryId,
     finalPaymentMethod,
-    overrideData.payment_status || 'unpaid',
+    finalPaymentStatus,
     yearMonth,
     originalExpenseId,
     overrideData.is_transfer !== undefined ? (overrideData.is_transfer ? 1 : 0) : (original.is_transfer ? 1 : 0),
