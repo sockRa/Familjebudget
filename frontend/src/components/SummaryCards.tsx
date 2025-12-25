@@ -1,28 +1,57 @@
 import { MonthlyOverview, formatCurrency } from '../types';
+import { TrendIndicator } from './TrendIndicator';
 
 interface SummaryCardsProps {
     overview: MonthlyOverview;
+    previousOverview?: MonthlyOverview | null;
     settings: {
         person1Name: string;
         person2Name: string;
     };
 }
 
-export function SummaryCards({ overview, settings }: SummaryCardsProps) {
+export function SummaryCards({ overview, previousOverview, settings }: SummaryCardsProps) {
     return (
         <>
             <div className="stats-grid">
                 <div className="stat-card">
                     <div className="stat-label">Inkomster</div>
-                    <div className="stat-value">{formatCurrency(overview.totalIncome)}</div>
+                    <div className="stat-value">
+                        {formatCurrency(overview.totalIncome)}
+                        {previousOverview && (
+                            <TrendIndicator
+                                current={overview.totalIncome}
+                                previous={previousOverview.totalIncome}
+                                lowerIsBetter={false}
+                            />
+                        )}
+                    </div>
                 </div>
                 <div className="stat-card">
                     <div className="stat-label">Utgifter</div>
-                    <div className="stat-value">{formatCurrency(overview.totalExpenses)}</div>
+                    <div className="stat-value">
+                        {formatCurrency(overview.totalExpenses)}
+                        {previousOverview && (
+                            <TrendIndicator
+                                current={overview.totalExpenses}
+                                previous={previousOverview.totalExpenses}
+                                lowerIsBetter={true}
+                            />
+                        )}
+                    </div>
                 </div>
                 <div className={`stat-card ${overview.balance >= 0 ? 'positive' : 'negative'}`}>
                     <div className="stat-label">Balans</div>
-                    <div className="stat-value">{formatCurrency(overview.balance)}</div>
+                    <div className="stat-value">
+                        {formatCurrency(overview.balance)}
+                        {previousOverview && (
+                            <TrendIndicator
+                                current={overview.balance}
+                                previous={previousOverview.balance}
+                                lowerIsBetter={false}
+                            />
+                        )}
+                    </div>
                 </div>
                 {overview.totalTransfers > 0 && (
                     <div className="stat-card">

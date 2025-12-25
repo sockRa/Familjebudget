@@ -36,6 +36,7 @@ function App() {
     const [incomes, setIncomes] = useState<Income[]>([]);
     const [expenses, setExpenses] = useState<Expense[]>([]);
     const [overview, setOverview] = useState<MonthlyOverview | null>(null);
+    const [previousOverview, setPreviousOverview] = useState<MonthlyOverview | null>(null);
 
     // Modal state
     const [showExpenseModal, setShowExpenseModal] = useState(false);
@@ -53,9 +54,7 @@ function App() {
         variant?: 'danger' | 'warning' | 'info';
     }>({ isOpen: false, title: '', message: '', onConfirm: () => { } });
 
-    // Swipe handling
-    const touchStartX = useRef<number | null>(null);
-    const touchEndX = useRef<number | null>(null);
+    // Ref for main app container
     const appRef = useRef<HTMLDivElement>(null);
 
     // Theme effect
@@ -82,16 +81,19 @@ function App() {
         setError(null);
         setIsLoading(true);
         try {
-            const [cats, incs, exps, ov] = await Promise.all([
+            const previousMonth = addMonths(currentMonth, -1);
+            const [cats, incs, exps, ov, prevOv] = await Promise.all([
                 categoriesApi.getAll(),
                 incomesApi.getAll(currentMonth),
                 expensesApi.getAll(currentMonth),
                 overviewApi.get(currentMonth),
+                overviewApi.get(previousMonth).catch(() => null), // Silently fail for previous month
             ]);
             setCategories(cats);
             setIncomes(incs);
             setExpenses(exps);
             setOverview(ov);
+            setPreviousOverview(prevOv);
         } catch (err) {
             console.error('Failed to load data:', err);
             if (err instanceof ApiError) {
@@ -115,49 +117,6 @@ function App() {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [showExpenseModal, showIncomeModal, confirmDialog.isOpen]);
 
-    // Swipe handling for touch devices
-    useEffect(() => {
-        const element = appRef.current;
-        if (!element) return;
-
-        const handleTouchStart = (e: TouchEvent) => {
-            touchStartX.current = e.changedTouches[0].screenX;
-        };
-
-        const handleTouchEnd = (e: TouchEvent) => {
-            touchEndX.current = e.changedTouches[0].screenX;
-            handleSwipe();
-        };
-
-        const handleSwipe = () => {
-            if (touchStartX.current === null || touchEndX.current === null) return;
-            if (showExpenseModal || showIncomeModal || confirmDialog.isOpen) return;
-
-            const diff = touchStartX.current - touchEndX.current;
-            const minSwipeDistance = 75;
-
-            if (Math.abs(diff) > minSwipeDistance) {
-                if (diff > 0) {
-                    // Swipe left -> next month
-                    setCurrentMonth((m: number) => addMonths(m, 1));
-                } else {
-                    // Swipe right -> previous month
-                    setCurrentMonth((m: number) => addMonths(m, -1));
-                }
-            }
-
-            touchStartX.current = null;
-            touchEndX.current = null;
-        };
-
-        element.addEventListener('touchstart', handleTouchStart, { passive: true });
-        element.addEventListener('touchend', handleTouchEnd, { passive: true });
-
-        return () => {
-            element.removeEventListener('touchstart', handleTouchStart);
-            element.removeEventListener('touchend', handleTouchEnd);
-        };
-    }, [showExpenseModal, showIncomeModal, confirmDialog.isOpen]);
 
     useEffect(() => {
         loadData();
@@ -399,7 +358,7 @@ function App() {
 
             {activeTab === 'overview' && overview && (
                 <>
-                    <SummaryCards overview={overview} settings={settings} />
+                    <SummaryCards overview={overview} previousOverview={previousOverview} settings={settings} />
 
                     {/* Status filter */}
                     <div className="filter-bar">
@@ -432,29 +391,89 @@ function App() {
 
                     {/* Fixed expenses */}
                     <div className="expense-section">
-                        <div
-                            className="section-header clickable"
-                            onClick={() => toggleSection('fixed')}
-                        >
-                            <span className="section-title">
-                                {collapsedSections['fixed'] ? '▶' : '▼'} Fasta utgifter
-                            </span>
+                        <div className="section-header">
+                            <span className="section-title">Fasta utgifter</span>
                             <span className="section-total">
                                 {formatCurrency(fixedExpenses.reduce((s, e) => s + e.amount, 0))}
                             </span>
                         </div>
-                        {!collapsedSections['fixed'] && (
-                            <>
-                                {Object.entries(groupByPaymentMethod(fixedExpenses)).map(([method, exps]) => (
-                                    <div key={method} style={{ marginBottom: 'var(--space-md)' }}>
-                                        <div style={{
-                                            fontSize: 'var(--text-sm)',
-                                            color: 'var(--color-text-muted)',
-                                            marginBottom: 'var(--space-xs)',
-                                            paddingLeft: 'var(--space-sm)'
-                                        }}>
-                                            {getPaymentMethodLabel(method as any, settings)}
-                                        </div>
+                        {Object.entries(groupByPaymentMethod(fixedExpenses)).map(([method, exps]) => (
+                            <div key={method} style={{ marginBottom: 'var(--space-md)' }}>
+                                <div
+                                    className="payment-group-header clickable"
+                                    onClick={() => toggleSection(`fixed-${method}`)}
+                                >
+                                    <span>
+                                        {collapsedSections[`fixed-${method}`] ? '▶' : '▼'} {getPaymentMethodLabel(method as any, settings)}
+                                    </span>
+                                    <span className="payment-group-total">
+                                        {formatCurrency(exps.reduce((s, e) => s + e.amount, 0))}
+                                    </span>
+                                </div>
+                                {!collapsedSections[`fixed-${method}`] && (
+                                    <div className="expense-list">
+                                        {exps.map(expense => (
+                                            <ExpenseItem
+                                                key={expense.id}
+                                                expense={expense}
+                                                settings={settings}
+                                                onEdit={(e) => { setEditingExpense(e); setShowExpenseModal(true); }}
+                                                onDelete={handleDeleteExpense}
+                                                onToggleStatus={handleToggleStatus}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                        {fixedExpenses.length === 0 && (
+                            <div className="empty-state">
+                                <div className="empty-state-icon">📝</div>
+                                <p>Inga fasta utgifter{statusFilter !== 'all' ? ' med denna status' : ' ännu'}</p>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Variable expenses */}
+                    <div className="expense-section">
+                        <div className="section-header">
+                            <span className="section-title">Variabla utgifter</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}>
+                                <button
+                                    className={`btn btn-secondary ${!isGroupingByCategory ? 'active' : ''}`}
+                                    onClick={() => setIsGroupingByCategory(false)}
+                                    style={{ fontSize: 'var(--text-xs)', padding: '2px 8px' }}
+                                >
+                                    Lista
+                                </button>
+                                <button
+                                    className={`btn btn-secondary ${isGroupingByCategory ? 'active' : ''}`}
+                                    onClick={() => setIsGroupingByCategory(true)}
+                                    style={{ fontSize: 'var(--text-xs)', padding: '2px 8px' }}
+                                >
+                                    Kategori
+                                </button>
+                                <span className="section-total">
+                                    {formatCurrency(variableExpenses.reduce((s, e) => s + e.amount, 0))}
+                                </span>
+                            </div>
+                        </div>
+
+                        {isGroupingByCategory ? (
+                            Object.entries(groupByCategory(variableExpenses)).map(([catName, exps]) => (
+                                <div key={catName} style={{ marginBottom: 'var(--space-md)' }}>
+                                    <div
+                                        className="payment-group-header clickable"
+                                        onClick={() => toggleSection(`var-${catName}`)}
+                                    >
+                                        <span>
+                                            {collapsedSections[`var-${catName}`] ? '▶' : '▼'} {catName}
+                                        </span>
+                                        <span className="payment-group-total">
+                                            {formatCurrency(exps.reduce((s, e) => s + e.amount, 0))}
+                                        </span>
+                                    </div>
+                                    {!collapsedSections[`var-${catName}`] && (
                                         <div className="expense-list">
                                             {exps.map(expense => (
                                                 <ExpenseItem
@@ -467,98 +486,29 @@ function App() {
                                                 />
                                             ))}
                                         </div>
-                                    </div>
+                                    )}
+                                </div>
+                            ))
+                        ) : (
+                            <div className="expense-list">
+                                {variableExpenses.map(expense => (
+                                    <ExpenseItem
+                                        key={expense.id}
+                                        expense={expense}
+                                        settings={settings}
+                                        onEdit={(e) => { setEditingExpense(e); setShowExpenseModal(true); }}
+                                        onDelete={handleDeleteExpense}
+                                        onToggleStatus={handleToggleStatus}
+                                    />
                                 ))}
-                                {fixedExpenses.length === 0 && (
-                                    <div className="empty-state">
-                                        <div className="empty-state-icon">📝</div>
-                                        <p>Inga fasta utgifter{statusFilter !== 'all' ? ' med denna status' : ' ännu'}</p>
-                                    </div>
-                                )}
-                            </>
-                        )}
-                    </div>
-
-                    {/* Variable expenses */}
-                    <div className="expense-section">
-                        <div
-                            className="section-header clickable"
-                            onClick={() => toggleSection('variable')}
-                        >
-                            <span className="section-title">
-                                {collapsedSections['variable'] ? '▶' : '▼'} Variabla utgifter
-                            </span>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}>
-                                <button
-                                    className={`btn btn-secondary ${!isGroupingByCategory ? 'active' : ''}`}
-                                    onClick={(e) => { e.stopPropagation(); setIsGroupingByCategory(false); }}
-                                    style={{ fontSize: 'var(--text-xs)', padding: '2px 8px' }}
-                                >
-                                    Lista
-                                </button>
-                                <button
-                                    className={`btn btn-secondary ${isGroupingByCategory ? 'active' : ''}`}
-                                    onClick={(e) => { e.stopPropagation(); setIsGroupingByCategory(true); }}
-                                    style={{ fontSize: 'var(--text-xs)', padding: '2px 8px' }}
-                                >
-                                    Kategori
-                                </button>
-                                <span className="section-total">
-                                    {formatCurrency(variableExpenses.reduce((s, e) => s + e.amount, 0))}
-                                </span>
                             </div>
-                        </div>
+                        )}
 
-                        {!collapsedSections['variable'] && (
-                            <>
-                                {isGroupingByCategory ? (
-                                    Object.entries(groupByCategory(variableExpenses)).map(([catName, exps]) => (
-                                        <div key={catName} style={{ marginBottom: 'var(--space-md)' }}>
-                                            <div style={{
-                                                fontSize: 'var(--text-sm)',
-                                                color: 'var(--color-text-muted)',
-                                                marginBottom: 'var(--space-xs)',
-                                                paddingLeft: 'var(--space-sm)',
-                                                fontWeight: 600
-                                            }}>
-                                                {catName}
-                                            </div>
-                                            <div className="expense-list">
-                                                {exps.map(expense => (
-                                                    <ExpenseItem
-                                                        key={expense.id}
-                                                        expense={expense}
-                                                        settings={settings}
-                                                        onEdit={(e) => { setEditingExpense(e); setShowExpenseModal(true); }}
-                                                        onDelete={handleDeleteExpense}
-                                                        onToggleStatus={handleToggleStatus}
-                                                    />
-                                                ))}
-                                            </div>
-                                        </div>
-                                    ))
-                                ) : (
-                                    <div className="expense-list">
-                                        {variableExpenses.map(expense => (
-                                            <ExpenseItem
-                                                key={expense.id}
-                                                expense={expense}
-                                                settings={settings}
-                                                onEdit={(e) => { setEditingExpense(e); setShowExpenseModal(true); }}
-                                                onDelete={handleDeleteExpense}
-                                                onToggleStatus={handleToggleStatus}
-                                            />
-                                        ))}
-                                    </div>
-                                )}
-
-                                {variableExpenses.length === 0 && (
-                                    <div className="empty-state">
-                                        <div className="empty-state-icon">📦</div>
-                                        <p>Inga variabla utgifter{statusFilter !== 'all' ? ' med denna status' : ' denna månad'}</p>
-                                    </div>
-                                )}
-                            </>
+                        {variableExpenses.length === 0 && (
+                            <div className="empty-state">
+                                <div className="empty-state-icon">📦</div>
+                                <p>Inga variabla utgifter{statusFilter !== 'all' ? ' med denna status' : ' denna månad'}</p>
+                            </div>
                         )}
                     </div>
 

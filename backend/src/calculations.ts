@@ -94,6 +94,7 @@ export function calculateExpensesByPerson(
 
 /**
  * Calculate liquidity needed by person (Bills + Transfers that still need to be paid)
+ * For autogiro_gemensamt, 'pending' also counts as handled (money is in joint account)
  */
 export function calculateLiquidityByPerson(
     expenses: Expense[],
@@ -107,8 +108,13 @@ export function calculateLiquidityByPerson(
 
     expenses
         .filter(e => (e.expense_type === 'fixed' && e.year_month === null) || e.year_month === yearMonth)
-        .filter(e => e.payment_status !== 'paid')
         .forEach(expense => {
+            // For autogiro_gemensamt, pending means money is already in joint account
+            const isHandled = expense.payment_status === 'paid' ||
+                (expense.payment_method === 'autogiro_gemensamt' && expense.payment_status === 'pending');
+
+            if (isHandled) return;
+
             if (expense.payment_method === 'autogiro_jag' || expense.payment_method === 'efaktura_jag') {
                 result.jag += expense.amount;
             } else if (expense.payment_method === 'autogiro_fruga' || expense.payment_method === 'efaktura_fruga') {
