@@ -43,6 +43,7 @@ export const ExpenseSchema = z.object({
     payment_method: PaymentMethodSchema,
     payment_status: PaymentStatusSchema.default('unpaid'),
     year_month: z.number().int().min(190001).max(209912).nullable().optional(),
+    is_transfer: z.boolean().or(z.number()).transform(v => typeof v === 'boolean' ? (v ? 1 : 0) : v).optional(),
 });
 
 export const ExpenseUpdateSchema = z.object({
@@ -53,6 +54,7 @@ export const ExpenseUpdateSchema = z.object({
     payment_method: PaymentMethodSchema.optional(),
     payment_status: PaymentStatusSchema.optional(),
     year_month: z.number().int().min(190001).max(209912).nullable().optional(),
+    is_transfer: z.boolean().or(z.number()).transform(v => typeof v === 'boolean' ? (v ? 1 : 0) : v).optional(),
 });
 
 // Query parameter schemas

@@ -30,7 +30,8 @@ export function ExpenseModal({
     const [amount, setAmount] = useState(expense?.amount?.toString() || '');
     const [categoryId, setCategoryId] = useState(expense?.category_id?.toString() || '');
     const [expenseType, setExpenseType] = useState(expense?.expense_type || 'fixed');
-    const [paymentMethod, setPaymentMethod] = useState(expense?.payment_method || 'efaktura');
+    const [paymentMethod, setPaymentMethod] = useState(expense?.payment_method || 'efaktura_gemensamt');
+    const [isTransfer, setIsTransfer] = useState(expense?.is_transfer === 1);
     const paymentStatus = expense?.payment_status || 'unpaid';
 
     // New category creation
@@ -41,12 +42,13 @@ export function ExpenseModal({
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         onSave({
-            name,
+            name: name.trim(),
             amount: parseFloat(amount),
             category_id: categoryId ? parseInt(categoryId) : null,
             expense_type: expenseType,
             payment_method: paymentMethod,
             payment_status: paymentStatus,
+            is_transfer: isTransfer ? 1 : 0,
             year_month: expenseType === 'variable' ? currentMonth : null,
         });
     };
@@ -183,7 +185,21 @@ export function ExpenseModal({
                                 <option value="autogiro_gemensamt">🔄 Autogiro (Gemensamt)</option>
                             </select>
                         </div>
+
+                        <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)', marginTop: 'var(--space-md)' }}>
+                            <input
+                                type="checkbox"
+                                id="is_transfer"
+                                checked={isTransfer}
+                                onChange={(e) => setIsTransfer(e.target.checked)}
+                                style={{ width: 'auto' }}
+                            />
+                            <label htmlFor="is_transfer" className="form-label" style={{ marginBottom: 0 }}>
+                                Är detta en överföring mellan konton?
+                            </label>
+                        </div>
                     </div>
+
                     <div className="modal-footer">
                         <button type="button" className="btn btn-secondary" onClick={onClose}>Avbryt</button>
                         <button type="submit" className="btn btn-primary">Spara</button>

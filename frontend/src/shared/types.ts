@@ -40,6 +40,7 @@ export interface Expense {
     year_month: number | null;
     overrides_expense_id: number | null;
     is_deleted?: number;
+    is_transfer?: number;
     created_at: string;
 }
 
@@ -59,6 +60,12 @@ export interface MonthlyOverview {
     };
     expensesByPaymentMethod: Record<PaymentMethod, number>;
     expensesByPerson: {
+        jag: number;
+        fruga: number;
+        gemensamt: number;
+    };
+    totalTransfers: number;
+    liquidityByPerson: {
         jag: number;
         fruga: number;
         gemensamt: number;

@@ -6,7 +6,7 @@ const ALLOWED_INCOME_FIELDS = ['name', 'owner', 'amount', 'year_month'] as const
 const ALLOWED_EXPENSE_FIELDS = [
   'name', 'amount', 'category_id', 'expense_type',
   'payment_method', 'payment_status', 'year_month',
-  'overrides_expense_id', 'is_deleted'
+  'overrides_expense_id', 'is_deleted', 'is_transfer'
 ] as const;
 
 type CategoryField = typeof ALLOWED_CATEGORY_FIELDS[number];
@@ -142,8 +142,8 @@ const capitalizedName = (name: string) => name.charAt(0).toUpperCase() + name.sl
 
 export function createExpense(data: any) {
   const result = db.prepare(`
-        INSERT INTO expenses (name, amount, category_id, expense_type, payment_method, payment_status, year_month, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO expenses (name, amount, category_id, expense_type, payment_method, payment_status, year_month, is_transfer, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
     capitalizedName(data.name),
     data.amount,
@@ -152,6 +152,7 @@ export function createExpense(data: any) {
     data.payment_method,
     data.payment_status || 'unpaid',
     data.expense_type === 'fixed' ? null : (data.year_month ?? null),
+    data.is_transfer ? 1 : 0,
     new Date().toISOString()
   );
 
@@ -193,8 +194,8 @@ export function createExpenseOverride(originalExpenseId: number, yearMonth: numb
   const finalPaymentMethod = overrideData.payment_method || original.payment_method;
 
   const result = db.prepare(`
-        INSERT INTO expenses (name, amount, category_id, expense_type, payment_method, payment_status, year_month, overrides_expense_id, created_at)
-        VALUES (?, ?, ?, 'fixed', ?, ?, ?, ?, ?)
+        INSERT INTO expenses (name, amount, category_id, expense_type, payment_method, payment_status, year_month, overrides_expense_id, is_transfer, created_at)
+        VALUES (?, ?, ?, 'fixed', ?, ?, ?, ?, ?, ?)
     `).run(
     capitalizedName(finalName),
     overrideData.amount,
@@ -203,6 +204,7 @@ export function createExpenseOverride(originalExpenseId: number, yearMonth: numb
     overrideData.payment_status || 'unpaid',
     yearMonth,
     originalExpenseId,
+    overrideData.is_transfer !== undefined ? (overrideData.is_transfer ? 1 : 0) : (original.is_transfer ? 1 : 0),
     new Date().toISOString()
   );
 

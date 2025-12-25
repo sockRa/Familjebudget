@@ -120,6 +120,16 @@ const migrations: Migration[] = [
             `);
     },
   },
+  {
+    version: 4,
+    name: 'Add is_transfer column to expenses',
+    up: () => {
+      const info = db.prepare("PRAGMA table_info(expenses)").all() as any[];
+      if (!info.find(c => c.name === 'is_transfer')) {
+        db.exec(`ALTER TABLE expenses ADD COLUMN is_transfer INTEGER DEFAULT 0`);
+      }
+    },
+  },
 ];
 
 // Run migrations on startup

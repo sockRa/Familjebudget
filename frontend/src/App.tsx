@@ -27,6 +27,7 @@ function App() {
     const [activeTab, setActiveTab] = useState<Tab>('overview');
     const [currentMonth, setCurrentMonth] = useState(getCurrentYearMonth());
     const [isLoading, setIsLoading] = useState(true);
+    const [isGroupingByCategory, setIsGroupingByCategory] = useState(true);
 
     // Data
     const [categories, setCategories] = useState<Category[]>([]);
@@ -181,6 +182,16 @@ function App() {
         return groups;
     };
 
+    const groupByCategory = (exps: Expense[]) => {
+        const groups: Record<string, Expense[]> = {};
+        exps.forEach(e => {
+            const catName = e.category_name || 'Övrigt';
+            if (!groups[catName]) groups[catName] = [];
+            groups[catName].push(e);
+        });
+        return groups;
+    };
+
     // Handlers
     const handleSaveExpense = async (data: any) => {
         try {
@@ -229,7 +240,15 @@ function App() {
 
     const handleToggleStatus = async (id: number, status: PaymentStatus) => {
         try {
-            await expensesApi.update(id, { payment_status: status });
+            const expense = expenses.find(e => e.id === id);
+            if (!expense) return;
+
+            if (expense.expense_type === 'fixed' && !expense.overrides_expense_id) {
+                // Create override for status change
+                await expensesApi.createOverride(id, currentMonth, { payment_status: status });
+            } else {
+                await expensesApi.update(id, { payment_status: status });
+            }
             loadData();
         } catch (err) {
             console.error('Failed to update status:', err);
@@ -403,23 +422,69 @@ function App() {
                     {/* Variable expenses */}
                     <div className="expense-section">
                         <div className="section-header">
-                            <span className="section-title">Variabla utgifter ({formatYearMonth(currentMonth)})</span>
-                            <span className="section-total">
-                                {formatCurrency(variableExpenses.reduce((s, e) => s + e.amount, 0))}
-                            </span>
+                            <span className="section-title">Variabla utgifter</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}>
+                                <button
+                                    className={`btn btn-secondary ${!isGroupingByCategory ? 'active' : ''}`}
+                                    onClick={() => setIsGroupingByCategory(false)}
+                                    style={{ fontSize: 'var(--text-xs)', padding: '2px 8px' }}
+                                >
+                                    Lista
+                                </button>
+                                <button
+                                    className={`btn btn-secondary ${isGroupingByCategory ? 'active' : ''}`}
+                                    onClick={() => setIsGroupingByCategory(true)}
+                                    style={{ fontSize: 'var(--text-xs)', padding: '2px 8px' }}
+                                >
+                                    Kategori
+                                </button>
+                                <span className="section-total">
+                                    {formatCurrency(variableExpenses.reduce((s, e) => s + e.amount, 0))}
+                                </span>
+                            </div>
                         </div>
-                        <div className="expense-list">
-                            {variableExpenses.map(expense => (
-                                <ExpenseItem
-                                    key={expense.id}
-                                    expense={expense}
-                                    settings={settings}
-                                    onEdit={(e) => { setEditingExpense(e); setShowExpenseModal(true); }}
-                                    onDelete={handleDeleteExpense}
-                                    onToggleStatus={handleToggleStatus}
-                                />
-                            ))}
-                        </div>
+
+                        {isGroupingByCategory ? (
+                            Object.entries(groupByCategory(variableExpenses)).map(([catName, exps]) => (
+                                <div key={catName} style={{ marginBottom: 'var(--space-md)' }}>
+                                    <div style={{
+                                        fontSize: 'var(--text-sm)',
+                                        color: 'var(--color-text-muted)',
+                                        marginBottom: 'var(--space-xs)',
+                                        paddingLeft: 'var(--space-sm)',
+                                        fontWeight: 600
+                                    }}>
+                                        {catName}
+                                    </div>
+                                    <div className="expense-list">
+                                        {exps.map(expense => (
+                                            <ExpenseItem
+                                                key={expense.id}
+                                                expense={expense}
+                                                settings={settings}
+                                                onEdit={(e) => { setEditingExpense(e); setShowExpenseModal(true); }}
+                                                onDelete={handleDeleteExpense}
+                                                onToggleStatus={handleToggleStatus}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+                            ))
+                        ) : (
+                            <div className="expense-list">
+                                {variableExpenses.map(expense => (
+                                    <ExpenseItem
+                                        key={expense.id}
+                                        expense={expense}
+                                        settings={settings}
+                                        onEdit={(e) => { setEditingExpense(e); setShowExpenseModal(true); }}
+                                        onDelete={handleDeleteExpense}
+                                        onToggleStatus={handleToggleStatus}
+                                    />
+                                ))}
+                            </div>
+                        )}
+
                         {variableExpenses.length === 0 && (
                             <div className="empty-state">
                                 <div className="empty-state-icon">📦</div>
@@ -429,11 +494,11 @@ function App() {
                     </div>
 
                     <button
-                        className="btn btn-primary"
+                        className="fab"
                         onClick={() => { setEditingExpense(null); setShowExpenseModal(true); }}
-                        style={{ width: '100%', padding: 'var(--space-md)' }}
+                        title="Lägg till utgift"
                     >
-                        + Lägg till utgift
+                        +
                     </button>
                 </>
             )}

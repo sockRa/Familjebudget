@@ -29,7 +29,7 @@ export function ExpenseItem({
 
 
     return (
-        <div className="expense-item">
+        <div className={`expense-item ${expense.is_transfer ? 'is-transfer' : ''}`}>
             <button
                 className="expense-status-btn"
                 onClick={cycleStatus}
@@ -38,7 +38,10 @@ export function ExpenseItem({
                 {PAYMENT_STATUS_ICONS[expense.payment_status || 'unpaid']}
             </button>
             <div className="expense-info">
-                <span className="expense-name">{expense.name}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
+                    <span className="expense-name">{expense.name}</span>
+                    {expense.is_transfer === 1 && <span className="transfer-badge">Överföring</span>}
+                </div>
                 <div className="expense-meta">
                     <span className={`payment-chip ${expense.payment_method}`}>
                         {getPaymentMethodLabel(expense.payment_method, settings)}
