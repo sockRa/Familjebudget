@@ -56,6 +56,7 @@ export function calculateExpensesByPaymentMethod(
 
 /**
  * Calculate expenses grouped by person (excluding already paid and excluding transfers for "To Pay" list)
+ * For autogiro_gemensamt, 'pending' also counts as handled (money is in joint account)
  */
 export function calculateExpensesByPerson(
     expenses: Expense[],
@@ -69,9 +70,14 @@ export function calculateExpensesByPerson(
 
     expenses
         .filter(e => (e.expense_type === 'fixed' && e.year_month === null) || e.year_month === yearMonth)
-        .filter(e => e.payment_status !== 'paid')
         .filter(e => !e.is_transfer)
         .forEach(expense => {
+            // For autogiro_gemensamt, pending means money is already in joint account
+            const isHandled = expense.payment_status === 'paid' ||
+                (expense.payment_method === 'autogiro_gemensamt' && expense.payment_status === 'pending');
+
+            if (isHandled) return;
+
             if (expense.payment_method === 'autogiro_jag' || expense.payment_method === 'efaktura_jag') {
                 result.jag += expense.amount;
             } else if (expense.payment_method === 'autogiro_fruga' || expense.payment_method === 'efaktura_fruga') {
@@ -119,6 +125,7 @@ export function calculateLiquidityByPerson(
 
 /**
  * Calculate how much each person needs to transfer to the joint account
+ * Excludes paid expenses and pending autogiro_gemensamt (money already in joint account)
  */
 export function calculateTransferToJoint(
     expenses: Expense[],
@@ -127,8 +134,10 @@ export function calculateTransferToJoint(
 ): { jag: number; fruga: number } {
     const jointTotal = expenses
         .filter(e => (e.expense_type === 'fixed' && e.year_month === null) || e.year_month === yearMonth)
-        .filter(e => !e.is_transfer) // Transfers to joint are handled separately or excluded from this specific logic
+        .filter(e => !e.is_transfer)
         .filter(e => e.payment_method === 'autogiro_gemensamt')
+        // For autogiro_gemensamt, pending means money is already transferred to joint account
+        .filter(e => e.payment_status !== 'paid' && e.payment_status !== 'pending')
         .reduce((sum, e) => sum + e.amount, 0);
 
     return {
