@@ -8,7 +8,8 @@ export type PaymentMethod =
     | 'efaktura_gemensamt'
     | 'autogiro_jag'
     | 'autogiro_fruga'
-    | 'autogiro_gemensamt';
+    | 'autogiro_gemensamt'
+    | 'transfer';
 
 export type ExpenseType = 'fixed' | 'variable';
 
@@ -93,6 +94,7 @@ export const PAYMENT_METHODS: PaymentMethod[] = [
     'autogiro_jag',
     'autogiro_fruga',
     'autogiro_gemensamt',
+    'transfer',
 ];
 
 export const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
@@ -114,6 +116,7 @@ export const PAYMENT_METHOD_ICONS: Record<PaymentMethod, string> = {
     autogiro_jag: '🔵',
     autogiro_fruga: '🟣',
     autogiro_gemensamt: '🟢',
+    transfer: '🔄',
 };
 
 // Helper functions
@@ -128,6 +131,7 @@ export function getPaymentMethodLabel(
         autogiro_jag: `Autogiro (${settings.person1Name})`,
         autogiro_fruga: `Autogiro (${settings.person2Name})`,
         autogiro_gemensamt: 'Autogiro (Gemensamt)',
+        transfer: 'Överföring',
     };
     return labels[method] || method;
 }

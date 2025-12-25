@@ -10,6 +10,7 @@ export const PaymentMethodSchema = z.enum([
     'autogiro_jag',
     'autogiro_fruga',
     'autogiro_gemensamt',
+    'transfer',
 ]);
 
 export const ExpenseTypeSchema = z.enum(['fixed', 'variable']);

@@ -72,6 +72,15 @@ export function ExpenseModal({
         }
     };
 
+    const handleIsTransferChange = (checked: boolean) => {
+        setIsTransfer(checked);
+        if (checked) {
+            setPaymentMethod('transfer');
+        } else if (paymentMethod === 'transfer') {
+            setPaymentMethod('efaktura_gemensamt');
+        }
+    };
+
     return (
         <div className="modal-backdrop" onClick={onClose}>
             <div className="modal" onClick={e => e.stopPropagation()}>
@@ -105,8 +114,9 @@ export function ExpenseModal({
                                 required
                             />
                         </div>
-                        <div className="form-row">
-                            <div className="form-group">
+
+                        <div className="form-row" style={{ gap: 'var(--space-md)' }}>
+                            <div className="form-group" style={{ flex: 1 }}>
                                 <label className="form-label">Typ</label>
                                 <select
                                     className="form-select"
@@ -117,7 +127,7 @@ export function ExpenseModal({
                                     <option value="variable">Variabel (endast denna månad)</option>
                                 </select>
                             </div>
-                            <div className="form-group">
+                            <div className="form-group" style={{ flex: 1 }}>
                                 <label className="form-label">Kategori</label>
                                 {!showNewCategory ? (
                                     <div style={{ display: 'flex', gap: 'var(--space-xs)' }}>
@@ -137,6 +147,7 @@ export function ExpenseModal({
                                             className="btn btn-secondary"
                                             onClick={() => setShowNewCategory(true)}
                                             title="Skapa ny kategori"
+                                            style={{ padding: '0 var(--space-sm)' }}
                                         >
                                             +
                                         </button>
@@ -156,6 +167,7 @@ export function ExpenseModal({
                                             className="btn btn-primary"
                                             onClick={handleCreateCategory}
                                             disabled={isCreatingCategory || !newCategoryName.trim()}
+                                            style={{ padding: '0 var(--space-sm)' }}
                                         >
                                             ✓
                                         </button>
@@ -163,6 +175,7 @@ export function ExpenseModal({
                                             type="button"
                                             className="btn btn-secondary"
                                             onClick={() => { setShowNewCategory(false); setNewCategoryName(''); }}
+                                            style={{ padding: '0 var(--space-sm)' }}
                                         >
                                             ✕
                                         </button>
@@ -170,34 +183,45 @@ export function ExpenseModal({
                                 )}
                             </div>
                         </div>
-                        <div className="form-group">
-                            <label className="form-label">Betalningsmetod</label>
-                            <select
-                                className="form-select"
-                                value={paymentMethod}
-                                onChange={e => setPaymentMethod(e.target.value as any)}
-                            >
-                                <option value="efaktura_jag">📧 E-faktura ({settings.person1Name})</option>
-                                <option value="efaktura_fruga">📧 E-faktura ({settings.person2Name})</option>
-                                <option value="efaktura_gemensamt">📧 E-faktura (Gemensamt)</option>
-                                <option value="autogiro_jag">🔄 Autogiro ({settings.person1Name})</option>
-                                <option value="autogiro_fruga">🔄 Autogiro ({settings.person2Name})</option>
-                                <option value="autogiro_gemensamt">🔄 Autogiro (Gemensamt)</option>
-                            </select>
-                        </div>
 
-                        <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)', marginTop: 'var(--space-md)' }}>
+                        <div className="form-group" style={{
+                            marginTop: 'var(--space-md)',
+                            padding: 'var(--space-sm)',
+                            backgroundColor: 'var(--bg-secondary)',
+                            borderRadius: 'var(--radius-sm)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 'var(--space-sm)'
+                        }}>
                             <input
                                 type="checkbox"
                                 id="is_transfer"
                                 checked={isTransfer}
-                                onChange={(e) => setIsTransfer(e.target.checked)}
-                                style={{ width: 'auto' }}
+                                onChange={(e) => handleIsTransferChange(e.target.checked)}
+                                style={{ width: '1.2em', height: '1.2em' }}
                             />
-                            <label htmlFor="is_transfer" className="form-label" style={{ marginBottom: 0 }}>
-                                Är detta en överföring mellan konton?
+                            <label htmlFor="is_transfer" style={{ marginBottom: 0, fontWeight: 500, cursor: 'pointer' }}>
+                                Överföring (Inget betalsätt krävs)
                             </label>
                         </div>
+
+                        {!isTransfer && (
+                            <div className="form-group">
+                                <label className="form-label">Betalningsmetod</label>
+                                <select
+                                    className="form-select"
+                                    value={paymentMethod === 'transfer' ? 'efaktura_gemensamt' : paymentMethod}
+                                    onChange={e => setPaymentMethod(e.target.value as any)}
+                                >
+                                    <option value="efaktura_jag">📧 E-faktura ({settings.person1Name})</option>
+                                    <option value="efaktura_fruga">📧 E-faktura ({settings.person2Name})</option>
+                                    <option value="efaktura_gemensamt">📧 E-faktura (Gemensamt)</option>
+                                    <option value="autogiro_jag">🔄 Autogiro ({settings.person1Name})</option>
+                                    <option value="autogiro_fruga">🔄 Autogiro ({settings.person2Name})</option>
+                                    <option value="autogiro_gemensamt">🔄 Autogiro (Gemensamt)</option>
+                                </select>
+                            </div>
+                        )}
                     </div>
 
                     <div className="modal-footer">
