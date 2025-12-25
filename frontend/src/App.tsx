@@ -239,19 +239,29 @@ function App() {
     };
 
     const handleToggleStatus = async (id: number, status: PaymentStatus) => {
-        try {
-            const expense = expenses.find(e => e.id === id);
-            if (!expense) return;
+        const expense = expenses.find(e => e.id === id);
+        if (!expense) return;
 
+        // Optimistic update - update local state immediately
+        setExpenses(prev => prev.map(e =>
+            e.id === id ? { ...e, payment_status: status } : e
+        ));
+
+        try {
             if (expense.expense_type === 'fixed' && !expense.overrides_expense_id) {
                 // Create override for status change
                 await expensesApi.createOverride(id, currentMonth, { payment_status: status });
             } else {
                 await expensesApi.update(id, { payment_status: status });
             }
+            // Silently refresh in background to sync any server-side changes
             loadData();
         } catch (err) {
             console.error('Failed to update status:', err);
+            // Revert on error
+            setExpenses(prev => prev.map(e =>
+                e.id === id ? { ...e, payment_status: expense.payment_status } : e
+            ));
         }
     };
 
