@@ -22,13 +22,7 @@ router.get('/:yearMonth', (req: Request, res: Response) => {
 
 // Get list of months with expenses
 router.get('/', (req: Request, res: Response) => {
-  const expenses = db.getAllExpenses();
-  const months = [...new Set(
-    expenses
-      .filter((e: any) => e.year_month !== null)
-      .map((e: any) => e.year_month as number)
-  )].sort((a, b) => (Number(b) ?? 0) - (Number(a) ?? 0));
-
+  const months = db.getExpenseMonths();
   res.json(months);
 });
 

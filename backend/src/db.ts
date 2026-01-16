@@ -253,6 +253,16 @@ export function getAllExpenses() {
   return db.prepare('SELECT * FROM expenses').all();
 }
 
+export function getExpenseMonths() {
+  const rows = db.prepare(`
+    SELECT DISTINCT year_month
+    FROM expenses
+    WHERE year_month IS NOT NULL
+    ORDER BY year_month DESC
+  `).all() as { year_month: number }[];
+  return rows.map(r => r.year_month);
+}
+
 export default {
   getCategories,
   getCategoryById,
@@ -273,4 +283,5 @@ export default {
   createDeletedOverride,
   getAllIncomes,
   getAllExpenses,
+  getExpenseMonths,
 };
