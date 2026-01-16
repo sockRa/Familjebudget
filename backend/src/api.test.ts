@@ -51,6 +51,30 @@ describe('API Routes', () => {
             expect(res.status).toBe(400);
         });
 
+        it('should fail if amount is negative', async () => {
+            const res = await request(app)
+                .post('/api/incomes')
+                .send({
+                    name: 'Negative',
+                    owner: 'jag',
+                    amount: -100,
+                    year_month: 202312
+                });
+            expect(res.status).toBe(400);
+        });
+
+        it('should fail if year_month is invalid', async () => {
+            const res = await request(app)
+                .post('/api/incomes')
+                .send({
+                    name: 'Bad Date',
+                    owner: 'jag',
+                    amount: 100,
+                    year_month: 123
+                });
+            expect(res.status).toBe(400);
+        });
+
         it('should get all incomes', async () => {
             await request(app).post('/api/incomes').send({ name: 'I1', owner: 'jag', amount: 100, year_month: 202312 });
             await request(app).post('/api/incomes').send({ name: 'I2', owner: 'fruga', amount: 200, year_month: 202312 });
@@ -73,6 +97,14 @@ describe('API Routes', () => {
             expect(list.body).toHaveLength(1);
             expect(list.body[0].name).toBe('Food');
         });
+
+        it('should fail if color is invalid', async () => {
+            const res = await request(app)
+                .post('/api/categories')
+                .send({ name: 'Bad Color', color: 'red' });
+
+            expect(res.status).toBe(400);
+        });
     });
 
     describe('Expenses API', () => {
@@ -90,6 +122,32 @@ describe('API Routes', () => {
             expect(res.status).toBe(201);
             expect(res.body.name).toBe('Lunch');
             expect(res.body.year_month).toBe(202310);
+        });
+
+        it('should fail if expense amount is negative', async () => {
+            const res = await request(app)
+                .post('/api/expenses')
+                .send({
+                    name: 'Lunch',
+                    amount: -50,
+                    expense_type: 'variable',
+                    payment_method: 'autogiro_gemensamt',
+                    year_month: 202310
+                });
+            expect(res.status).toBe(400);
+        });
+
+        it('should fail if payment method is invalid', async () => {
+            const res = await request(app)
+                .post('/api/expenses')
+                .send({
+                    name: 'Lunch',
+                    amount: 50,
+                    expense_type: 'variable',
+                    payment_method: 'invalid_method',
+                    year_month: 202310
+                });
+            expect(res.status).toBe(400);
         });
     });
 });
