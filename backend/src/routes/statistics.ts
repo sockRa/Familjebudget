@@ -104,7 +104,7 @@ router.get('/monthly', (req: Request, res: Response) => {
 
         // Add Overrides (if not deleted)
         for (const ov of monthOverrides) {
-            if (ov.is_deleted !== 1 && ov.is_deleted !== true) { // SQLite stores boolean as 0/1 usually
+            if (ov.is_deleted !== 1) { // SQLite stores boolean as 0/1
                 monthExpenses.push({
                     amount: ov.amount,
                     payment_method: ov.payment_method,
