@@ -1,10 +1,23 @@
 import type { Income, Expense, PaymentMethod, MonthlyOverview } from './types.js';
 
 /**
+ * Get expenses for a specific month (fixed + variable for that month)
+ */
+export function getExpensesForMonth(expenses: Expense[], yearMonth: number): Expense[] {
+    return expenses.filter(e => (e.expense_type === 'fixed' && e.year_month === null) || e.year_month === yearMonth);
+}
+
+/**
  * Calculate total income
  */
 export function calculateTotalIncome(incomes: Income[]): number {
     return incomes.reduce((sum, income) => sum + income.amount, 0);
+}
+
+function _calculateTotalExpenses(filteredExpenses: Expense[]): number {
+    return filteredExpenses
+        .filter(e => !e.is_transfer)
+        .reduce((sum, expense) => sum + expense.amount, 0);
 }
 
 /**
@@ -13,9 +26,12 @@ export function calculateTotalIncome(incomes: Income[]): number {
  * Transfers are NOT included in total expenses as they don't reduce overall balance
  */
 export function calculateTotalExpenses(expenses: Expense[], yearMonth: number): number {
-    return expenses
-        .filter(e => (e.expense_type === 'fixed' && e.year_month === null) || e.year_month === yearMonth)
-        .filter(e => !e.is_transfer)
+    return _calculateTotalExpenses(getExpensesForMonth(expenses, yearMonth));
+}
+
+function _calculateTotalTransfers(filteredExpenses: Expense[]): number {
+    return filteredExpenses
+        .filter(e => e.is_transfer)
         .reduce((sum, expense) => sum + expense.amount, 0);
 }
 
@@ -23,19 +39,10 @@ export function calculateTotalExpenses(expenses: Expense[], yearMonth: number): 
  * Calculate total transfers for a given month
  */
 export function calculateTotalTransfers(expenses: Expense[], yearMonth: number): number {
-    return expenses
-        .filter(e => (e.expense_type === 'fixed' && e.year_month === null) || e.year_month === yearMonth)
-        .filter(e => e.is_transfer)
-        .reduce((sum, expense) => sum + expense.amount, 0);
+    return _calculateTotalTransfers(getExpensesForMonth(expenses, yearMonth));
 }
 
-/**
- * Calculate expenses grouped by payment method
- */
-export function calculateExpensesByPaymentMethod(
-    expenses: Expense[],
-    yearMonth: number
-): Record<PaymentMethod, number> {
+function _calculateExpensesByPaymentMethod(filteredExpenses: Expense[]): Record<PaymentMethod, number> {
     const result: Record<PaymentMethod, number> = {
         efaktura_jag: 0,
         efaktura_fruga: 0,
@@ -45,10 +52,49 @@ export function calculateExpensesByPaymentMethod(
         transfer: 0,
     };
 
-    expenses
-        .filter(e => (e.expense_type === 'fixed' && e.year_month === null) || e.year_month === yearMonth)
+    filteredExpenses
         .forEach(expense => {
             result[expense.payment_method] += expense.amount;
+        });
+
+    return result;
+}
+
+/**
+ * Calculate expenses grouped by payment method
+ */
+export function calculateExpensesByPaymentMethod(
+    expenses: Expense[],
+    yearMonth: number
+): Record<PaymentMethod, number> {
+    return _calculateExpensesByPaymentMethod(getExpensesForMonth(expenses, yearMonth));
+}
+
+function _calculateExpensesByPerson(filteredExpenses: Expense[]): { jag: number; fruga: number; gemensamt: number } {
+    const result = {
+        jag: 0,
+        fruga: 0,
+        gemensamt: 0,
+    };
+
+    filteredExpenses
+        .filter(e => !e.is_transfer)
+        .forEach(expense => {
+            // For autogiro_gemensamt, pending means money is already in joint account
+            const isHandled = expense.payment_status === 'paid' ||
+                (expense.payment_method === 'autogiro_gemensamt' && expense.payment_status === 'pending');
+
+            if (isHandled) return;
+
+            if (expense.payment_method === 'autogiro_jag' || expense.payment_method === 'efaktura_jag') {
+                result.jag += expense.amount;
+            } else if (expense.payment_method === 'autogiro_fruga' || expense.payment_method === 'efaktura_fruga') {
+                result.fruga += expense.amount;
+            } else if (expense.payment_method === 'autogiro_gemensamt') {
+                result.gemensamt += expense.amount;
+            } else {
+                result.gemensamt += expense.amount;
+            }
         });
 
     return result;
@@ -62,15 +108,17 @@ export function calculateExpensesByPerson(
     expenses: Expense[],
     yearMonth: number
 ): { jag: number; fruga: number; gemensamt: number } {
+    return _calculateExpensesByPerson(getExpensesForMonth(expenses, yearMonth));
+}
+
+function _calculateLiquidityByPerson(filteredExpenses: Expense[]): { jag: number; fruga: number; gemensamt: number } {
     const result = {
         jag: 0,
         fruga: 0,
         gemensamt: 0,
     };
 
-    expenses
-        .filter(e => (e.expense_type === 'fixed' && e.year_month === null) || e.year_month === yearMonth)
-        .filter(e => !e.is_transfer)
+    filteredExpenses
         .forEach(expense => {
             // For autogiro_gemensamt, pending means money is already in joint account
             const isHandled = expense.payment_status === 'paid' ||
@@ -100,46 +148,11 @@ export function calculateLiquidityByPerson(
     expenses: Expense[],
     yearMonth: number
 ): { jag: number; fruga: number; gemensamt: number } {
-    const result = {
-        jag: 0,
-        fruga: 0,
-        gemensamt: 0,
-    };
-
-    expenses
-        .filter(e => (e.expense_type === 'fixed' && e.year_month === null) || e.year_month === yearMonth)
-        .forEach(expense => {
-            // For autogiro_gemensamt, pending means money is already in joint account
-            const isHandled = expense.payment_status === 'paid' ||
-                (expense.payment_method === 'autogiro_gemensamt' && expense.payment_status === 'pending');
-
-            if (isHandled) return;
-
-            if (expense.payment_method === 'autogiro_jag' || expense.payment_method === 'efaktura_jag') {
-                result.jag += expense.amount;
-            } else if (expense.payment_method === 'autogiro_fruga' || expense.payment_method === 'efaktura_fruga') {
-                result.fruga += expense.amount;
-            } else if (expense.payment_method === 'autogiro_gemensamt') {
-                result.gemensamt += expense.amount;
-            } else {
-                result.gemensamt += expense.amount;
-            }
-        });
-
-    return result;
+    return _calculateLiquidityByPerson(getExpensesForMonth(expenses, yearMonth));
 }
 
-/**
- * Calculate how much each person needs to transfer to the joint account
- * Excludes paid expenses and pending autogiro_gemensamt (money already in joint account)
- */
-export function calculateTransferToJoint(
-    expenses: Expense[],
-    yearMonth: number,
-    splitRatio: number = 0.5
-): { jag: number; fruga: number } {
-    const jointTotal = expenses
-        .filter(e => (e.expense_type === 'fixed' && e.year_month === null) || e.year_month === yearMonth)
+function _calculateTransferToJoint(filteredExpenses: Expense[], splitRatio: number = 0.5): { jag: number; fruga: number } {
+    const jointTotal = filteredExpenses
         .filter(e => !e.is_transfer)
         .filter(e => e.payment_method === 'autogiro_gemensamt')
         // For autogiro_gemensamt, pending means money is already transferred to joint account
@@ -153,6 +166,18 @@ export function calculateTransferToJoint(
 }
 
 /**
+ * Calculate how much each person needs to transfer to the joint account
+ * Excludes paid expenses and pending autogiro_gemensamt (money already in joint account)
+ */
+export function calculateTransferToJoint(
+    expenses: Expense[],
+    yearMonth: number,
+    splitRatio: number = 0.5
+): { jag: number; fruga: number } {
+    return _calculateTransferToJoint(getExpensesForMonth(expenses, yearMonth), splitRatio);
+}
+
+/**
  * Calculate complete monthly overview
  */
 export function calculateMonthlyOverview(
@@ -160,13 +185,15 @@ export function calculateMonthlyOverview(
     expenses: Expense[],
     yearMonth: number
 ): MonthlyOverview {
+    const relevantExpenses = getExpensesForMonth(expenses, yearMonth);
+
     const totalIncome = calculateTotalIncome(incomes);
-    const totalExpenses = calculateTotalExpenses(expenses, yearMonth);
-    const totalTransfers = calculateTotalTransfers(expenses, yearMonth);
-    const expensesByPaymentMethod = calculateExpensesByPaymentMethod(expenses, yearMonth);
-    const expensesByPerson = calculateExpensesByPerson(expenses, yearMonth);
-    const liquidityByPerson = calculateLiquidityByPerson(expenses, yearMonth);
-    const transferToJoint = calculateTransferToJoint(expenses, yearMonth);
+    const totalExpenses = _calculateTotalExpenses(relevantExpenses);
+    const totalTransfers = _calculateTotalTransfers(relevantExpenses);
+    const expensesByPaymentMethod = _calculateExpensesByPaymentMethod(relevantExpenses);
+    const expensesByPerson = _calculateExpensesByPerson(relevantExpenses);
+    const liquidityByPerson = _calculateLiquidityByPerson(relevantExpenses);
+    const transferToJoint = _calculateTransferToJoint(relevantExpenses);
 
     return {
         yearMonth,
@@ -179,11 +206,4 @@ export function calculateMonthlyOverview(
         expensesByPerson,
         liquidityByPerson,
     };
-}
-
-/**
- * Get expenses for a specific month (fixed + variable for that month)
- */
-export function getExpensesForMonth(expenses: Expense[], yearMonth: number): Expense[] {
-    return expenses.filter(e => (e.expense_type === 'fixed' && e.year_month === null) || e.year_month === yearMonth);
 }
