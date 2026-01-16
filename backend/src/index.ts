@@ -3,6 +3,7 @@ import cors from 'cors';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { existsSync } from 'fs';
+import { securityHeaders } from './middleware/security.js';
 import categoriesRouter from './routes/categories.js';
 import incomesRouter from './routes/incomes.js';
 import expensesRouter from './routes/expenses.js';
@@ -17,6 +18,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
+app.use(securityHeaders);
 app.use(cors());
 app.use(express.json());
 
