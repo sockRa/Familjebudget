@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
     Category, Income, Expense, MonthlyOverview, PaymentStatus, Settings,
     formatCurrency, formatYearMonth, getCurrentYearMonth, addMonths,
@@ -133,18 +133,21 @@ function App() {
         setConfirmDialog(prev => ({ ...prev, isOpen: false }));
     };
 
-    // Filter by status
-    const filterByStatus = (exps: Expense[]) => {
-        if (statusFilter === 'all') return exps;
-        return exps.filter(e => e.payment_status === statusFilter);
-    };
-
     const toggleSection = (sectionId: string) => {
         setCollapsedSections(prev => ({ ...prev, [sectionId]: !prev[sectionId] }));
     };
 
-    const fixedExpenses = filterByStatus(expenses.filter(e => e.expense_type === 'fixed'));
-    const variableExpenses = filterByStatus(expenses.filter(e => e.expense_type === 'variable'));
+    const fixedExpenses = useMemo(() => {
+        const fixed = expenses.filter(e => e.expense_type === 'fixed');
+        if (statusFilter === 'all') return fixed;
+        return fixed.filter(e => e.payment_status === statusFilter);
+    }, [expenses, statusFilter]);
+
+    const variableExpenses = useMemo(() => {
+        const variable = expenses.filter(e => e.expense_type === 'variable');
+        if (statusFilter === 'all') return variable;
+        return variable.filter(e => e.payment_status === statusFilter);
+    }, [expenses, statusFilter]);
 
     const groupByPaymentMethod = (exps: Expense[]) => {
         const groups: Record<string, Expense[]> = {};
