@@ -15,8 +15,9 @@ import { ExpenseModal } from './components/Modals/ExpenseModal';
 import { IncomeModal } from './components/Modals/IncomeModal';
 import { ConfirmDialog } from './components/ConfirmDialog';
 import { StatisticsPanel } from './components/StatisticsPanel';
+import { PlanningPanel } from './components/PlanningPanel';
 
-type Tab = 'overview' | 'incomes' | 'categories' | 'settings' | 'statistics';
+type Tab = 'overview' | 'incomes' | 'categories' | 'settings' | 'statistics' | 'planning';
 
 function App() {
     const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -364,6 +365,9 @@ function App() {
                 <button className={`tab ${activeTab === 'incomes' ? 'active' : ''}`} onClick={() => setActiveTab('incomes')}>
                     Inkomster
                 </button>
+                <button className={`tab ${activeTab === 'planning' ? 'active' : ''}`} onClick={() => setActiveTab('planning')}>
+                    Planering
+                </button>
                 <button className={`tab ${activeTab === 'statistics' ? 'active' : ''}`} onClick={() => setActiveTab('statistics')}>
                     Statistik
                 </button>
@@ -598,6 +602,15 @@ function App() {
 
             {activeTab === 'statistics' && (
                 <StatisticsPanel currentMonth={currentMonth} settings={settings} />
+            )}
+
+            {activeTab === 'planning' && (
+                <PlanningPanel
+                    expenses={expenses}
+                    incomes={incomes}
+                    currentMonth={currentMonth}
+                    onUpdate={loadData}
+                />
             )}
 
             {activeTab === 'categories' && (
