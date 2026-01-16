@@ -28,39 +28,106 @@ router.get('/monthly', (req: Request, res: Response) => {
         }
     }
 
-    const stats: MonthlyStats[] = months.map(yearMonth => {
-        // Get incomes for this month
-        const incomes = db.prepare(`
-            SELECT SUM(amount) as total FROM incomes WHERE year_month = ?
-        `).get(yearMonth) as { total: number | null };
+    // 1. Fetch Incomes
+    const incomes = db.prepare(`
+        SELECT year_month, SUM(amount) as total
+        FROM incomes
+        WHERE year_month >= ? AND year_month <= ?
+        GROUP BY year_month
+    `).all(start, end) as { year_month: number; total: number }[];
 
-        // Get expenses for this month
-        // Fixed expenses (no year_month) + variable expenses (year_month = current)
-        // Also include overrides for this month, exclude deleted overrides
-        const expenseRows = db.prepare(`
-            SELECT e.amount, e.payment_method, c.name as category_name
-            FROM expenses e
-            LEFT JOIN categories c ON e.category_id = c.id
-            WHERE 
-                -- Fixed expenses without an override for this month
-                (e.expense_type = 'fixed' AND e.overrides_expense_id IS NULL AND e.year_month IS NULL
-                 AND e.id NOT IN (SELECT overrides_expense_id FROM expenses WHERE year_month = ? AND overrides_expense_id IS NOT NULL))
-                -- Variable expenses for this month
-                OR (e.expense_type = 'variable' AND e.year_month = ? AND e.overrides_expense_id IS NULL)
-                -- Overrides for this month (not deleted)
-                OR (e.overrides_expense_id IS NOT NULL AND e.year_month = ? AND (e.is_deleted IS NULL OR e.is_deleted = 0))
-        `).all(yearMonth, yearMonth, yearMonth) as Array<{
-            amount: number;
-            payment_method: string;
-            category_name: string | null;
-        }>;
+    const incomeMap = new Map<number, number>();
+    incomes.forEach(i => incomeMap.set(i.year_month, i.total));
+
+    // 2. Fetch Categories
+    const categories = db.prepare('SELECT id, name FROM categories').all() as { id: number; name: string }[];
+    const categoryMap = new Map<number, string>();
+    categories.forEach(c => categoryMap.set(c.id, c.name));
+
+    // 3. Fetch Fixed Expenses
+    const fixedExpenses = db.prepare(`
+        SELECT id, amount, payment_method, category_id
+        FROM expenses
+        WHERE expense_type = 'fixed' AND year_month IS NULL AND overrides_expense_id IS NULL
+    `).all() as { id: number; amount: number; payment_method: string; category_id: number | null }[];
+
+    // 4. Fetch Variable Expenses
+    const variableExpenses = db.prepare(`
+        SELECT amount, payment_method, category_id, year_month
+        FROM expenses
+        WHERE expense_type = 'variable' AND year_month >= ? AND year_month <= ? AND overrides_expense_id IS NULL
+    `).all(start, end) as { amount: number; payment_method: string; category_id: number | null; year_month: number }[];
+
+    // 5. Fetch Overrides
+    const overrides = db.prepare(`
+        SELECT amount, payment_method, category_id, year_month, overrides_expense_id, is_deleted
+        FROM expenses
+        WHERE overrides_expense_id IS NOT NULL AND year_month >= ? AND year_month <= ?
+    `).all(start, end) as { amount: number; payment_method: string; category_id: number | null; year_month: number; overrides_expense_id: number; is_deleted: number | null }[];
+
+    // Group Variable Expenses by Month
+    const variableByMonth = new Map<number, typeof variableExpenses>();
+    variableExpenses.forEach(e => {
+        if (!variableByMonth.has(e.year_month)) variableByMonth.set(e.year_month, []);
+        variableByMonth.get(e.year_month)!.push(e);
+    });
+
+    // Group Overrides by Month
+    const overridesByMonth = new Map<number, typeof overrides>();
+    overrides.forEach(e => {
+        if (!overridesByMonth.has(e.year_month)) overridesByMonth.set(e.year_month, []);
+        overridesByMonth.get(e.year_month)!.push(e);
+    });
+
+    const stats: MonthlyStats[] = months.map(yearMonth => {
+        const totalIncome = incomeMap.get(yearMonth) || 0;
+
+        const monthExpenses: { amount: number; payment_method: string; category_name: string | null }[] = [];
+
+        const monthOverrides = overridesByMonth.get(yearMonth) || [];
+        const monthVariable = variableByMonth.get(yearMonth) || [];
+
+        // Set of fixed expense IDs that are overridden
+        const overriddenFixedIds = new Set<number>();
+        monthOverrides.forEach(o => overriddenFixedIds.add(o.overrides_expense_id));
+
+        // Add Fixed Expenses (if not overridden)
+        for (const fixed of fixedExpenses) {
+            if (!overriddenFixedIds.has(fixed.id)) {
+                monthExpenses.push({
+                    amount: fixed.amount,
+                    payment_method: fixed.payment_method,
+                    category_name: fixed.category_id ? categoryMap.get(fixed.category_id) || null : null
+                });
+            }
+        }
+
+        // Add Overrides (if not deleted)
+        for (const ov of monthOverrides) {
+            if (ov.is_deleted !== 1 && ov.is_deleted !== true) { // SQLite stores boolean as 0/1 usually
+                monthExpenses.push({
+                    amount: ov.amount,
+                    payment_method: ov.payment_method,
+                    category_name: ov.category_id ? categoryMap.get(ov.category_id) || null : null
+                });
+            }
+        }
+
+        // Add Variable Expenses
+        for (const v of monthVariable) {
+            monthExpenses.push({
+                amount: v.amount,
+                payment_method: v.payment_method,
+                category_name: v.category_id ? categoryMap.get(v.category_id) || null : null
+            });
+        }
 
         // Calculate totals
-        const totalExpenses = expenseRows.reduce((sum, e) => sum + e.amount, 0);
+        const totalExpenses = monthExpenses.reduce((sum, e) => sum + e.amount, 0);
 
         // Group by category
         const byCategory: Record<string, number> = {};
-        expenseRows.forEach(e => {
+        monthExpenses.forEach(e => {
             const cat = e.category_name || 'Okategoriserat';
             byCategory[cat] = (byCategory[cat] || 0) + e.amount;
         });
@@ -74,7 +141,7 @@ router.get('/monthly', (req: Request, res: Response) => {
             autogiro_gemensamt: 0,
             transfer: 0,
         };
-        expenseRows.forEach(e => {
+        monthExpenses.forEach(e => {
             const method = e.payment_method as PaymentMethod;
             if (byPaymentMethod[method] !== undefined) {
                 byPaymentMethod[method] += e.amount;
@@ -84,7 +151,7 @@ router.get('/monthly', (req: Request, res: Response) => {
         return {
             yearMonth,
             totalExpenses,
-            totalIncome: incomes.total || 0,
+            totalIncome,
             byCategory,
             byPaymentMethod,
         };
