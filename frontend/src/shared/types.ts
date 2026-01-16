@@ -57,6 +57,7 @@ export interface MonthlyOverview {
     totalIncome: number;
     totalExpenses: number;
     balance: number;
+    unbudgeted: number;
     transferToJoint: {
         jag: number;
         fruga: number;

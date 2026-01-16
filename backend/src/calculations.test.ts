@@ -116,11 +116,27 @@ describe('calculateMonthlyOverview', () => {
         expect(result.totalIncome).toBe(56250);
         expect(result.totalExpenses).toBe(16148);
         expect(result.balance).toBe(40102);
+        expect(result.unbudgeted).toBe(40102);
         expect(result.transferToJoint.jag).toBe(6400);
         expect(result.transferToJoint.fruga).toBe(6400);
         expect(result.expensesByPerson.jag).toBe(3000); // Julklappar (efaktura_jag)
         expect(result.expensesByPerson.fruga).toBe(0);
         expect(result.expensesByPerson.gemensamt).toBe(12800);
+    });
+
+    it('should subtract transfers from unbudgeted amount', () => {
+        const expensesWithTransfer: Expense[] = [
+            ...mockExpenses,
+            { id: 7, name: 'Sparande', amount: 5000, category_id: 1, expense_type: 'fixed', payment_method: 'transfer', payment_status: 'paid', year_month: null, overrides_expense_id: null, created_at: '', is_transfer: 1 }
+        ];
+
+        const result = calculateMonthlyOverview(mockIncomes, expensesWithTransfer, 202412);
+
+        expect(result.totalIncome).toBe(56250);
+        expect(result.totalExpenses).toBe(16148); // Transfers excluded from expenses
+        expect(result.totalTransfers).toBe(5000);
+        expect(result.balance).toBe(40102); // Income - Expenses
+        expect(result.unbudgeted).toBe(35102); // Income - Expenses - Transfers (40102 - 5000)
     });
 });
 

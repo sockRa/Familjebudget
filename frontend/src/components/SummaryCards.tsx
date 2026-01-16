@@ -53,6 +53,19 @@ export function SummaryCards({ overview, previousOverview, settings }: SummaryCa
                         )}
                     </div>
                 </div>
+                <div className={`stat-card ${overview.unbudgeted >= 0 ? 'positive' : 'negative'}`}>
+                    <div className="stat-label">Obudgeterat</div>
+                    <div className="stat-value">
+                        {formatCurrency(overview.unbudgeted)}
+                        {previousOverview && (
+                            <TrendIndicator
+                                current={overview.unbudgeted}
+                                previous={previousOverview.unbudgeted}
+                                lowerIsBetter={false}
+                            />
+                        )}
+                    </div>
+                </div>
                 {overview.totalTransfers > 0 && (
                     <div className="stat-card">
                         <div className="stat-label">Överföringar</div>

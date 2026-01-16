@@ -174,6 +174,7 @@ export function calculateMonthlyOverview(
         totalExpenses,
         totalTransfers,
         balance: totalIncome - totalExpenses,
+        unbudgeted: totalIncome - totalExpenses - totalTransfers,
         transferToJoint,
         expensesByPaymentMethod,
         expensesByPerson,
