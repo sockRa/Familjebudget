@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
     Category, Income, Expense, MonthlyOverview, PaymentStatus, Settings,
     formatCurrency, formatYearMonth, getCurrentYearMonth, addMonths,
-    getPaymentMethodLabel, getOwnerLabel, DEFAULT_SETTINGS
+    getOwnerLabel, DEFAULT_SETTINGS
 } from './types';
 import { categoriesApi, incomesApi, expensesApi, overviewApi, settingsApi, ApiError } from './api';
 
@@ -190,14 +190,6 @@ function App() {
         return groups.filter(g => g.items.length > 0);
     }, [filteredExpenses]);
 
-    const groupByPaymentMethod = (exps: Expense[]) => {
-        const groups: Record<string, Expense[]> = {};
-        exps.forEach(e => {
-            if (!groups[e.payment_method]) groups[e.payment_method] = [];
-            groups[e.payment_method].push(e);
-        });
-        return groups;
-    };
 
     // Handlers
     const handleSaveExpense = async (data: any) => {
