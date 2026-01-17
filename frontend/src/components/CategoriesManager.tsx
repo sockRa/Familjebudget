@@ -42,7 +42,14 @@ export function CategoriesManager({
                 {categories.map(cat => (
                     <div key={cat.id} className="expense-item" style={{ gridTemplateColumns: '1fr auto' }}>
                         <span className="expense-name">{cat.name}</span>
-                        <button className="btn btn-icon btn-danger" onClick={() => handleDelete(cat.id)}>🗑️</button>
+                        <button
+                            className="btn btn-icon btn-danger"
+                            onClick={() => handleDelete(cat.id)}
+                            aria-label={`Ta bort kategori ${cat.name}`}
+                            title="Ta bort kategori"
+                        >
+                            🗑️
+                        </button>
                     </div>
                 ))}
             </div>
