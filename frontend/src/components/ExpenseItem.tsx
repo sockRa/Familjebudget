@@ -1,4 +1,4 @@
-import { Expense, PaymentStatus, PAYMENT_STATUS_ICONS, formatCurrency, getPaymentMethodLabel } from '../types';
+import { Expense, PaymentStatus, PAYMENT_STATUS_ICONS, PAYMENT_STATUS_LABELS, formatCurrency, getPaymentMethodLabel } from '../types';
 
 interface Settings {
     person1Name: string;
@@ -20,20 +20,24 @@ export function ExpenseItem({
     onDelete,
     onToggleStatus
 }: ExpenseItemProps) {
+    const statusOrder: PaymentStatus[] = ['unpaid', 'pending', 'paid'];
+    const currentIndex = statusOrder.indexOf(expense.payment_status || 'unpaid');
+    const nextStatus = statusOrder[(currentIndex + 1) % 3];
+
     const cycleStatus = () => {
-        const statusOrder: PaymentStatus[] = ['unpaid', 'pending', 'paid'];
-        const currentIndex = statusOrder.indexOf(expense.payment_status || 'unpaid');
-        const nextStatus = statusOrder[(currentIndex + 1) % 3];
         onToggleStatus(expense.id, nextStatus);
     };
 
+    const currentStatusLabel = PAYMENT_STATUS_LABELS[expense.payment_status || 'unpaid'];
+    const nextStatusLabel = PAYMENT_STATUS_LABELS[nextStatus];
 
     return (
         <div className={`expense-item ${expense.is_transfer ? 'is-transfer' : ''}`}>
             <button
                 className="expense-status-btn"
                 onClick={cycleStatus}
-                title={`Klicka för att ändra status`}
+                title={`Klicka för att ändra status till ${nextStatusLabel}`}
+                aria-label={`Status: ${currentStatusLabel}. Klicka för att ändra till ${nextStatusLabel}`}
             >
                 {PAYMENT_STATUS_ICONS[expense.payment_status || 'unpaid']}
             </button>
@@ -55,8 +59,22 @@ export function ExpenseItem({
             </div>
             <span className="expense-amount">{formatCurrency(expense.amount)}</span>
             <div className="expense-actions">
-                <button className="btn btn-icon btn-secondary" onClick={() => onEdit(expense)}>✏️</button>
-                <button className="btn btn-icon btn-danger" onClick={() => onDelete(expense.id)}>🗑️</button>
+                <button
+                    className="btn btn-icon btn-secondary"
+                    onClick={() => onEdit(expense)}
+                    aria-label={`Redigera ${expense.name}`}
+                    title="Redigera"
+                >
+                    ✏️
+                </button>
+                <button
+                    className="btn btn-icon btn-danger"
+                    onClick={() => onDelete(expense.id)}
+                    aria-label={`Ta bort ${expense.name}`}
+                    title="Ta bort"
+                >
+                    🗑️
+                </button>
             </div>
         </div>
     );
