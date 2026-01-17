@@ -137,6 +137,14 @@ const migrations: Migration[] = [
       db.exec(`UPDATE expenses SET payment_method = 'autogiro_gemensamt' WHERE payment_method = 'efaktura_gemensamt'`);
     },
   },
+  {
+    version: 6,
+    name: 'Add special budget categories',
+    up: () => {
+      db.prepare('INSERT OR IGNORE INTO categories (name, color) VALUES (?, ?)').run('Ändringsbart', '#4dabf7');
+      db.prepare('INSERT OR IGNORE INTO categories (name, color) VALUES (?, ?)').run('Variabla fasta utgifter', '#ff922b');
+    },
+  },
 ];
 
 // Run migrations on startup

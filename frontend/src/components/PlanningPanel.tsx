@@ -23,6 +23,7 @@ export function PlanningPanel({ expenses, incomes, currentMonth, onUpdate }: Pla
     useEffect(() => {
         setSimulatedExpenses(
             expenses
+                .filter(e => e.category_name === 'Variabla fasta utgifter' || e.category_name === 'Ändringsbart')
                 .map(e => ({
                     ...e,
                     simulatedAmount: e.amount,
@@ -37,13 +38,13 @@ export function PlanningPanel({ expenses, incomes, currentMonth, onUpdate }: Pla
 
     const originalTotalExpenses = useMemo(() =>
         expenses.reduce((sum, e) => sum + e.amount, 0),
-    [expenses]);
+        [expenses]);
 
     const simulatedTotalExpenses = useMemo(() =>
         simulatedExpenses
             .filter(e => e.isIncluded)
             .reduce((sum, e) => sum + e.simulatedAmount, 0),
-    [simulatedExpenses]);
+        [simulatedExpenses]);
 
     const originalBalance = totalIncome - originalTotalExpenses;
     const simulatedBalance = totalIncome - simulatedTotalExpenses;

@@ -28,7 +28,6 @@ function App() {
     const [activeTab, setActiveTab] = useState<Tab>('overview');
     const [currentMonth, setCurrentMonth] = useState(getCurrentYearMonth());
     const [isLoading, setIsLoading] = useState(true);
-    const [isGroupingByCategory, setIsGroupingByCategory] = useState(true);
     const [statusFilter, setStatusFilter] = useState<PaymentStatus | 'all'>('all');
     const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
 
@@ -138,33 +137,64 @@ function App() {
         setCollapsedSections(prev => ({ ...prev, [sectionId]: !prev[sectionId] }));
     };
 
-    const fixedExpenses = useMemo(() => {
-        const fixed = expenses.filter(e => e.expense_type === 'fixed');
-        if (statusFilter === 'all') return fixed;
-        return fixed.filter(e => e.payment_status === statusFilter);
+    const filteredExpenses = useMemo(() => {
+        if (statusFilter === 'all') return expenses;
+        return expenses.filter(e => e.payment_status === statusFilter);
     }, [expenses, statusFilter]);
 
-    const variableExpenses = useMemo(() => {
-        const variable = expenses.filter(e => e.expense_type === 'variable');
-        if (statusFilter === 'all') return variable;
-        return variable.filter(e => e.payment_status === statusFilter);
-    }, [expenses, statusFilter]);
+    const expenseGroups = useMemo(() => {
+        const groups: { title: string, id: string, items: Expense[] }[] = [
+            { title: 'Fasta avgifter (oföränderliga)', id: 'fixed-rigid', items: [] },
+            { title: 'Autogiro', id: 'autogiro', items: [] },
+            { title: 'E-fakturor', id: 'efaktura', items: [] },
+            { title: 'Variabla fasta utgifter', id: 'variable-fixed', items: [] },
+            { title: 'Ändringsbart (nöje, spar, etc.)', id: 'changeable', items: [] },
+            { title: 'Övrigt', id: 'other', items: [] },
+        ];
+
+        filteredExpenses.forEach(e => {
+            const isAG = e.payment_method.startsWith('autogiro');
+            const isEF = e.payment_method.startsWith('efaktura');
+            const isVarFixed = e.category_name === 'Variabla fasta utgifter';
+            const isChangeable = e.category_name === 'Ändringsbart';
+
+            if (e.expense_type === 'fixed' && !isAG && !isEF && !isVarFixed && !isChangeable) {
+                groups[0].items.push(e);
+            } else if (isAG) {
+                groups[1].items.push(e);
+            } else if (isEF) {
+                groups[2].items.push(e);
+            } else if (isVarFixed) {
+                groups[3].items.push(e);
+            } else if (isChangeable) {
+                groups[4].items.push(e);
+            } else {
+                groups[5].items.push(e);
+            }
+        });
+
+        // Sort items within groups
+        groups.forEach(g => {
+            if (g.id === 'autogiro') {
+                // Gemensamt first, then others
+                g.items.sort((a, b) => {
+                    if (a.payment_method === 'autogiro_gemensamt' && b.payment_method !== 'autogiro_gemensamt') return -1;
+                    if (a.payment_method !== 'autogiro_gemensamt' && b.payment_method === 'autogiro_gemensamt') return 1;
+                    return a.name.localeCompare(b.name);
+                });
+            } else {
+                g.items.sort((a, b) => a.name.localeCompare(b.name));
+            }
+        });
+
+        return groups.filter(g => g.items.length > 0);
+    }, [filteredExpenses]);
 
     const groupByPaymentMethod = (exps: Expense[]) => {
         const groups: Record<string, Expense[]> = {};
         exps.forEach(e => {
             if (!groups[e.payment_method]) groups[e.payment_method] = [];
             groups[e.payment_method].push(e);
-        });
-        return groups;
-    };
-
-    const groupByCategory = (exps: Expense[]) => {
-        const groups: Record<string, Expense[]> = {};
-        exps.forEach(e => {
-            const catName = e.category_name || 'Övrigt';
-            if (!groups[catName]) groups[catName] = [];
-            groups[catName].push(e);
         });
         return groups;
     };
@@ -421,128 +451,43 @@ function App() {
                         </button>
                     </div>
 
-                    {/* Fixed expenses */}
-                    <div className="expense-section">
-                        <div className="section-header">
-                            <span className="section-title">Fasta utgifter</span>
-                            <span className="section-total">
-                                {formatCurrency(fixedExpenses.reduce((s, e) => s + e.amount, 0))}
-                            </span>
-                        </div>
-                        {Object.entries(groupByPaymentMethod(fixedExpenses)).map(([method, exps]) => (
-                            <div key={method} style={{ marginBottom: 'var(--space-md)' }}>
-                                <div
-                                    className="payment-group-header clickable"
-                                    onClick={() => toggleSection(`fixed-${method}`)}
-                                >
-                                    <span>
-                                        {collapsedSections[`fixed-${method}`] ? '▶' : '▼'} {getPaymentMethodLabel(method as any, settings)}
-                                    </span>
-                                    <span className="payment-group-total">
-                                        {formatCurrency(exps.reduce((s, e) => s + e.amount, 0))}
-                                    </span>
-                                </div>
-                                {!collapsedSections[`fixed-${method}`] && (
-                                    <div className="expense-list">
-                                        {exps.map(expense => (
-                                            <ExpenseItem
-                                                key={expense.id}
-                                                expense={expense}
-                                                settings={settings}
-                                                onEdit={(e) => { setEditingExpense(e); setShowExpenseModal(true); }}
-                                                onDelete={handleDeleteExpense}
-                                                onToggleStatus={handleToggleStatus}
-                                            />
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        ))}
-                        {fixedExpenses.length === 0 && (
-                            <div className="empty-state">
-                                <div className="empty-state-icon">📝</div>
-                                <p>Inga fasta utgifter{statusFilter !== 'all' ? ' med denna status' : ' ännu'}</p>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Variable expenses */}
-                    <div className="expense-section">
-                        <div className="section-header">
-                            <span className="section-title">Variabla utgifter</span>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}>
-                                <button
-                                    className={`btn btn-secondary ${!isGroupingByCategory ? 'active' : ''}`}
-                                    onClick={() => setIsGroupingByCategory(false)}
-                                    style={{ fontSize: 'var(--text-xs)', padding: '2px 8px' }}
-                                >
-                                    Lista
-                                </button>
-                                <button
-                                    className={`btn btn-secondary ${isGroupingByCategory ? 'active' : ''}`}
-                                    onClick={() => setIsGroupingByCategory(true)}
-                                    style={{ fontSize: 'var(--text-xs)', padding: '2px 8px' }}
-                                >
-                                    Kategori
-                                </button>
+                    {/* Grouped expenses list */}
+                    {expenseGroups.map(group => (
+                        <div key={group.id} className="expense-section">
+                            <div
+                                className="section-header clickable"
+                                onClick={() => toggleSection(group.id)}
+                            >
+                                <span className="section-title">
+                                    {collapsedSections[group.id] ? '▶' : '▼'} {group.title}
+                                </span>
                                 <span className="section-total">
-                                    {formatCurrency(variableExpenses.reduce((s, e) => s + e.amount, 0))}
+                                    {formatCurrency(group.items.reduce((s, e) => s + e.amount, 0))}
                                 </span>
                             </div>
-                        </div>
-
-                        {isGroupingByCategory ? (
-                            Object.entries(groupByCategory(variableExpenses)).map(([catName, exps]) => (
-                                <div key={catName} style={{ marginBottom: 'var(--space-md)' }}>
-                                    <div
-                                        className="payment-group-header clickable"
-                                        onClick={() => toggleSection(`var-${catName}`)}
-                                    >
-                                        <span>
-                                            {collapsedSections[`var-${catName}`] ? '▶' : '▼'} {catName}
-                                        </span>
-                                        <span className="payment-group-total">
-                                            {formatCurrency(exps.reduce((s, e) => s + e.amount, 0))}
-                                        </span>
-                                    </div>
-                                    {!collapsedSections[`var-${catName}`] && (
-                                        <div className="expense-list">
-                                            {exps.map(expense => (
-                                                <ExpenseItem
-                                                    key={expense.id}
-                                                    expense={expense}
-                                                    settings={settings}
-                                                    onEdit={(e) => { setEditingExpense(e); setShowExpenseModal(true); }}
-                                                    onDelete={handleDeleteExpense}
-                                                    onToggleStatus={handleToggleStatus}
-                                                />
-                                            ))}
-                                        </div>
-                                    )}
+                            {!collapsedSections[group.id] && (
+                                <div className="expense-list">
+                                    {group.items.map(expense => (
+                                        <ExpenseItem
+                                            key={expense.id}
+                                            expense={expense}
+                                            settings={settings}
+                                            onEdit={(e) => { setEditingExpense(e); setShowExpenseModal(true); }}
+                                            onDelete={handleDeleteExpense}
+                                            onToggleStatus={handleToggleStatus}
+                                        />
+                                    ))}
                                 </div>
-                            ))
-                        ) : (
-                            <div className="expense-list">
-                                {variableExpenses.map(expense => (
-                                    <ExpenseItem
-                                        key={expense.id}
-                                        expense={expense}
-                                        settings={settings}
-                                        onEdit={(e) => { setEditingExpense(e); setShowExpenseModal(true); }}
-                                        onDelete={handleDeleteExpense}
-                                        onToggleStatus={handleToggleStatus}
-                                    />
-                                ))}
-                            </div>
-                        )}
+                            )}
+                        </div>
+                    ))}
 
-                        {variableExpenses.length === 0 && (
-                            <div className="empty-state">
-                                <div className="empty-state-icon">📦</div>
-                                <p>Inga variabla utgifter{statusFilter !== 'all' ? ' med denna status' : ' denna månad'}</p>
-                            </div>
-                        )}
-                    </div>
+                    {expenseGroups.length === 0 && (
+                        <div className="empty-state">
+                            <div className="empty-state-icon">📝</div>
+                            <p>Inga utgifter{statusFilter !== 'all' ? ' med denna status' : ' ännu'}</p>
+                        </div>
+                    )}
 
                     <button
                         className="fab"

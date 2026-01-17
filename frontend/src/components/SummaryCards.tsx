@@ -40,7 +40,7 @@ export function SummaryCards({ overview, previousOverview, settings }: SummaryCa
                         )}
                     </div>
                 </div>
-                <div className={`stat-card ${overview.balance >= 0 ? 'positive' : 'negative'}`}>
+                <div className={`stat-card ${overview.balance >= 0 ? 'positive' : 'negative'}`} title="Inkomster minus alla utgifter">
                     <div className="stat-label">Balans</div>
                     <div className="stat-value">
                         {formatCurrency(overview.balance)}
@@ -67,7 +67,7 @@ export function SummaryCards({ overview, previousOverview, settings }: SummaryCa
                     </div>
                 </div>
                 {overview.totalTransfers > 0 && (
-                    <div className="stat-card">
+                    <div className="stat-card" title="Summa av alla rader markerade som överföring till sparkonto eller gemensamt konto">
                         <div className="stat-label">Överföringar</div>
                         <div className="stat-value" style={{ color: 'var(--color-text-muted)' }}>
                             {formatCurrency(overview.totalTransfers)}
