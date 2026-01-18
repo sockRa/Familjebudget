@@ -58,11 +58,14 @@ export function rateLimit(options: RateLimitOptions) {
 }
 
 // Preset configurations
+const STANDARD_WINDOW_MS = process.env.RATE_LIMIT_WINDOW_MS ? parseInt(process.env.RATE_LIMIT_WINDOW_MS) : 60 * 1000;
+const STANDARD_MAX = process.env.RATE_LIMIT_MAX ? parseInt(process.env.RATE_LIMIT_MAX) : 100;
+
 export const rateLimits = {
-    // Standard API limit: 100 requests per minute
+    // Standard API limit: 100 requests per minute (configurable)
     standard: rateLimit({
-        windowMs: 60 * 1000,
-        max: 100,
+        windowMs: STANDARD_WINDOW_MS,
+        max: STANDARD_MAX,
     }),
 
     // Strict limit for creation/mutation: 30 requests per minute
