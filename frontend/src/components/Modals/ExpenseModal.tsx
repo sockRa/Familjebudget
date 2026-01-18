@@ -103,24 +103,29 @@ export function ExpenseModal({
             <div className="modal" onClick={e => e.stopPropagation()}>
                 <div className="modal-header">
                     <h2 className="modal-title">{expense ? 'Redigera utgift' : 'Ny utgift'}</h2>
-                    <button className="btn btn-icon btn-secondary" onClick={onClose}>✕</button>
+                    <button className="btn btn-icon btn-secondary" onClick={onClose} aria-label="Stäng">✕</button>
                 </div>
                 <form onSubmit={handleSubmit}>
                     <div className="modal-body">
                         <div className="form-group">
-                            <label className="form-label">Namn</label>
+                            <label className="form-label" htmlFor="expense-name">Namn</label>
                             <input
+                                id="expense-name"
                                 type="text"
                                 className={`form-input ${errors.name ? 'error' : ''}`}
                                 value={name}
                                 onChange={e => { setName(e.target.value); setErrors(prev => ({ ...prev, name: '' })); }}
                                 placeholder="T.ex. Hyra, Netflix..."
+                                autoFocus
+                                aria-invalid={!!errors.name}
+                                aria-describedby={errors.name ? "name-error" : undefined}
                             />
-                            {errors.name && <span className="form-error">{errors.name}</span>}
+                            {errors.name && <span id="name-error" className="form-error" role="alert">{errors.name}</span>}
                         </div>
                         <div className="form-group">
-                            <label className="form-label">Belopp (kr)</label>
+                            <label className="form-label" htmlFor="expense-amount">Belopp (kr)</label>
                             <input
+                                id="expense-amount"
                                 type="number"
                                 className={`form-input ${errors.amount ? 'error' : ''}`}
                                 value={amount}
@@ -128,14 +133,17 @@ export function ExpenseModal({
                                 placeholder="0"
                                 min="0"
                                 step="0.01"
+                                aria-invalid={!!errors.amount}
+                                aria-describedby={errors.amount ? "amount-error" : undefined}
                             />
-                            {errors.amount && <span className="form-error">{errors.amount}</span>}
+                            {errors.amount && <span id="amount-error" className="form-error" role="alert">{errors.amount}</span>}
                         </div>
 
                         <div className="form-row" style={{ gap: 'var(--space-md)' }}>
                             <div className="form-group" style={{ flex: 1 }}>
-                                <label className="form-label">Typ</label>
+                                <label className="form-label" htmlFor="expense-type">Typ</label>
                                 <select
+                                    id="expense-type"
                                     className="form-select"
                                     value={expenseType}
                                     onChange={e => setExpenseType(e.target.value as any)}
@@ -145,10 +153,11 @@ export function ExpenseModal({
                                 </select>
                             </div>
                             <div className="form-group" style={{ flex: 1 }}>
-                                <label className="form-label">Kategori</label>
+                                <label className="form-label" htmlFor="expense-category">Kategori</label>
                                 {!showNewCategory ? (
                                     <div style={{ display: 'flex', gap: 'var(--space-xs)' }}>
                                         <select
+                                            id="expense-category"
                                             className="form-select"
                                             value={categoryId}
                                             onChange={e => setCategoryId(e.target.value)}
@@ -164,6 +173,7 @@ export function ExpenseModal({
                                             className="btn btn-secondary"
                                             onClick={() => setShowNewCategory(true)}
                                             title="Skapa ny kategori"
+                                            aria-label="Skapa ny kategori"
                                             style={{ padding: '0 var(--space-sm)' }}
                                         >
                                             +
@@ -178,6 +188,7 @@ export function ExpenseModal({
                                             value={newCategoryName}
                                             onChange={e => setNewCategoryName(e.target.value)}
                                             style={{ flex: 1, minWidth: '120px' }}
+                                            aria-label="Namn på ny kategori"
                                         />
                                         <button
                                             type="button"
@@ -185,6 +196,8 @@ export function ExpenseModal({
                                             onClick={handleCreateCategory}
                                             disabled={isCreatingCategory || !newCategoryName.trim()}
                                             style={{ padding: '0 var(--space-sm)' }}
+                                            title="Spara kategori"
+                                            aria-label="Spara kategori"
                                         >
                                             ✓
                                         </button>
@@ -193,6 +206,8 @@ export function ExpenseModal({
                                             className="btn btn-secondary"
                                             onClick={() => { setShowNewCategory(false); setNewCategoryName(''); }}
                                             style={{ padding: '0 var(--space-sm)' }}
+                                            title="Avbryt"
+                                            aria-label="Avbryt skapande av kategori"
                                         >
                                             ✕
                                         </button>
@@ -224,8 +239,9 @@ export function ExpenseModal({
 
                         {!isTransfer && (
                             <div className="form-group">
-                                <label className="form-label">Betalningsmetod</label>
+                                <label className="form-label" htmlFor="payment-method">Betalningsmetod</label>
                                 <select
+                                    id="payment-method"
                                     className="form-select"
                                     value={paymentMethod === 'transfer' ? 'autogiro_gemensamt' : paymentMethod}
                                     onChange={e => setPaymentMethod(e.target.value as any)}
