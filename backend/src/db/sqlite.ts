@@ -145,6 +145,16 @@ const migrations: Migration[] = [
       db.prepare('INSERT OR IGNORE INTO categories (name, color) VALUES (?, ?)').run('Variabla fasta utgifter', '#ff922b');
     },
   },
+  {
+    version: 7,
+    name: 'Add year_month indexes',
+    up: () => {
+      db.exec(`
+        CREATE INDEX IF NOT EXISTS idx_expenses_year_month ON expenses(year_month);
+        CREATE INDEX IF NOT EXISTS idx_incomes_year_month ON incomes(year_month);
+      `);
+    },
+  },
 ];
 
 // Run migrations on startup
