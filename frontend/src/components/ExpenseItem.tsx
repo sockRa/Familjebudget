@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Expense, PaymentStatus, PAYMENT_STATUS_ICONS, PAYMENT_STATUS_LABELS, formatCurrency, getPaymentMethodLabel } from '../types';
 
 interface Settings {
@@ -13,7 +14,8 @@ interface ExpenseItemProps {
     onToggleStatus: (id: number, status: PaymentStatus) => void;
 }
 
-export function ExpenseItem({
+// Memoized component to prevent re-renders when parent state changes but props remain stable
+export const ExpenseItem = memo(function ExpenseItem({
     expense,
     settings,
     onEdit,
@@ -78,4 +80,4 @@ export function ExpenseItem({
             </div>
         </div>
     );
-}
+});

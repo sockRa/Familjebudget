@@ -125,13 +125,13 @@ function App() {
     }, [loadData]);
 
     // Helpers
-    const showConfirm = (title: string, message: string, onConfirm: () => void, variant: 'danger' | 'warning' | 'info' = 'danger') => {
+    const showConfirm = useCallback((title: string, message: string, onConfirm: () => void, variant: 'danger' | 'warning' | 'info' = 'danger') => {
         setConfirmDialog({ isOpen: true, title, message, onConfirm, variant });
-    };
+    }, []);
 
-    const closeConfirm = () => {
+    const closeConfirm = useCallback(() => {
         setConfirmDialog(prev => ({ ...prev, isOpen: false }));
-    };
+    }, []);
 
     const toggleSection = (sectionId: string) => {
         setCollapsedSections(prev => ({ ...prev, [sectionId]: !prev[sectionId] }));
@@ -192,6 +192,7 @@ function App() {
 
 
     // Handlers
+    // Memoized handlers to prevent unnecessary re-renders of ExpenseItem
     const handleSaveExpense = async (data: any) => {
         try {
             if (editingExpense) {
@@ -220,7 +221,7 @@ function App() {
         }
     };
 
-    const handleDeleteExpense = (id: number) => {
+    const handleDeleteExpense = useCallback((id: number) => {
         const expense = expenses.find(e => e.id === id);
         if (!expense) return;
 
@@ -258,9 +259,9 @@ function App() {
                 () => deleteAction(true)
             );
         }
-    };
+    }, [expenses, currentMonth, loadData, closeConfirm, showConfirm]);
 
-    const handleToggleStatus = async (id: number, status: PaymentStatus) => {
+    const handleToggleStatus = useCallback(async (id: number, status: PaymentStatus) => {
         const expense = expenses.find(e => e.id === id);
         if (!expense) return;
 
@@ -285,7 +286,13 @@ function App() {
                 e.id === id ? { ...e, payment_status: expense.payment_status } : e
             ));
         }
-    };
+    }, [expenses, currentMonth, loadData]);
+
+    // Memoized to keep ExpenseItem props stable
+    const handleEditExpense = useCallback((e: Expense) => {
+        setEditingExpense(e);
+        setShowExpenseModal(true);
+    }, []);
 
     const handleSaveIncome = async (data: { name: string; owner: string; amount: number; year_month: number }) => {
         try {
@@ -464,7 +471,7 @@ function App() {
                                             key={expense.id}
                                             expense={expense}
                                             settings={settings}
-                                            onEdit={(e) => { setEditingExpense(e); setShowExpenseModal(true); }}
+                                            onEdit={handleEditExpense}
                                             onDelete={handleDeleteExpense}
                                             onToggleStatus={handleToggleStatus}
                                         />
