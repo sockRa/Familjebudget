@@ -347,7 +347,11 @@ function App() {
                 <h1>💰 Familjebudget</h1>
                 <div className="header-controls">
                     <div className="month-selector">
-                        <button className="btn btn-secondary" onClick={() => setCurrentMonth((m: number) => addMonths(m, -1))}>
+                        <button
+                            className="btn btn-secondary"
+                            onClick={() => setCurrentMonth((m: number) => addMonths(m, -1))}
+                            aria-label="Föregående månad"
+                        >
                             ◀
                         </button>
                         <div className="current-month-container">
@@ -362,7 +366,11 @@ function App() {
                                 </button>
                             )}
                         </div>
-                        <button className="btn btn-secondary" onClick={() => setCurrentMonth((m: number) => addMonths(m, 1))}>
+                        <button
+                            className="btn btn-secondary"
+                            onClick={() => setCurrentMonth((m: number) => addMonths(m, 1))}
+                            aria-label="Nästa månad"
+                        >
                             ▶
                         </button>
                     </div>
@@ -370,6 +378,7 @@ function App() {
                         className="theme-toggle"
                         onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}
                         title={theme === 'dark' ? 'Byt till ljust tema' : 'Byt till mörkt tema'}
+                        aria-label={theme === 'dark' ? 'Byt till ljust tema' : 'Byt till mörkt tema'}
                     >
                         {theme === 'dark' ? '☀️' : '🌙'}
                     </button>
@@ -420,24 +429,28 @@ function App() {
                         <button
                             className={`btn btn-filter ${statusFilter === 'all' ? 'active' : ''}`}
                             onClick={() => setStatusFilter('all')}
+                            aria-pressed={statusFilter === 'all'}
                         >
                             Alla
                         </button>
                         <button
                             className={`btn btn-filter ${statusFilter === 'unpaid' ? 'active' : ''}`}
                             onClick={() => setStatusFilter('unpaid')}
+                            aria-pressed={statusFilter === 'unpaid'}
                         >
                             ❌ Obetalda
                         </button>
                         <button
                             className={`btn btn-filter ${statusFilter === 'pending' ? 'active' : ''}`}
                             onClick={() => setStatusFilter('pending')}
+                            aria-pressed={statusFilter === 'pending'}
                         >
                             ⏳ Pågående
                         </button>
                         <button
                             className={`btn btn-filter ${statusFilter === 'paid' ? 'active' : ''}`}
                             onClick={() => setStatusFilter('paid')}
+                            aria-pressed={statusFilter === 'paid'}
                         >
                             ✅ Betalda
                         </button>
@@ -446,9 +459,12 @@ function App() {
                     {/* Grouped expenses list */}
                     {expenseGroups.map(group => (
                         <div key={group.id} className="expense-section">
-                            <div
+                            <button
+                                type="button"
                                 className="section-header clickable"
                                 onClick={() => toggleSection(group.id)}
+                                aria-expanded={!collapsedSections[group.id]}
+                                style={{ width: '100%', border: 'none', background: 'var(--color-bg)', textAlign: 'inherit' }}
                             >
                                 <span className="section-title">
                                     {collapsedSections[group.id] ? '▶' : '▼'} {group.title}
@@ -456,7 +472,7 @@ function App() {
                                 <span className="section-total">
                                     {formatCurrency(group.items.reduce((s, e) => s + e.amount, 0))}
                                 </span>
-                            </div>
+                            </button>
                             {!collapsedSections[group.id] && (
                                 <div className="expense-list">
                                     {group.items.map(expense => (
@@ -485,6 +501,7 @@ function App() {
                         className="fab"
                         onClick={() => { setEditingExpense(null); setShowExpenseModal(true); }}
                         title="Lägg till utgift"
+                        aria-label="Lägg till utgift"
                     >
                         +
                     </button>
