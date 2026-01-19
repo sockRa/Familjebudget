@@ -20,7 +20,9 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(securityHeaders);
-app.use(cors());
+app.use(cors({
+    origin: [process.env.FRONTEND_URL || 'http://localhost:5173']
+}));
 app.use(rateLimits.standard);
 app.use(express.json());
 
