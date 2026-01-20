@@ -53,13 +53,14 @@ export function IncomeModal({
             <div className="modal" onClick={e => e.stopPropagation()}>
                 <div className="modal-header">
                     <h2 className="modal-title">{income ? 'Redigera inkomst' : 'Ny inkomst'}</h2>
-                    <button className="btn btn-icon btn-secondary" onClick={onClose}>✕</button>
+                    <button className="btn btn-icon btn-secondary" onClick={onClose} aria-label="Stäng">✕</button>
                 </div>
                 <form onSubmit={handleSubmit}>
                     <div className="modal-body">
                         <div className="form-group">
-                            <label className="form-label">Namn</label>
+                            <label className="form-label" htmlFor="income-name">Namn</label>
                             <input
+                                id="income-name"
                                 type="text"
                                 className={`form-input ${errors.name ? 'error' : ''}`}
                                 value={name}
@@ -70,8 +71,9 @@ export function IncomeModal({
                         </div>
                         <div className="form-row">
                             <div className="form-group">
-                                <label className="form-label">Vem</label>
+                                <label className="form-label" htmlFor="income-owner">Vem</label>
                                 <select
+                                    id="income-owner"
                                     className="form-select"
                                     value={owner}
                                     onChange={e => setOwner(e.target.value as 'jag' | 'fruga')}
@@ -81,8 +83,9 @@ export function IncomeModal({
                                 </select>
                             </div>
                             <div className="form-group">
-                                <label className="form-label">Belopp (kr)</label>
+                                <label className="form-label" htmlFor="income-amount">Belopp (kr)</label>
                                 <input
+                                    id="income-amount"
                                     type="number"
                                     className={`form-input ${errors.amount ? 'error' : ''}`}
                                     value={amount}
