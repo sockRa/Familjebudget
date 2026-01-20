@@ -535,12 +535,16 @@ function App() {
                                     <button
                                         className="btn btn-icon btn-secondary"
                                         onClick={() => { setEditingIncome(income); setShowIncomeModal(true); }}
+                                        aria-label={`Redigera ${income.name}`}
+                                        title="Redigera"
                                     >
                                         ✏️
                                     </button>
                                     <button
                                         className="btn btn-icon btn-danger"
                                         onClick={() => handleDeleteIncome(income.id)}
+                                        aria-label={`Ta bort ${income.name}`}
+                                        title="Ta bort"
                                     >
                                         🗑️
                                     </button>
