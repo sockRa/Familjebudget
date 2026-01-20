@@ -14,7 +14,8 @@ export function calculateTotalIncome(incomes: Income[]): number {
     return incomes.reduce((sum, income) => sum + income.amount, 0);
 }
 
-function _calculateTotalExpenses(filteredExpenses: Expense[]): number {
+// Deprecated: Internal use only, kept for backward compatibility if needed, but not used in optimized main function
+export function _calculateTotalExpenses(filteredExpenses: Expense[]): number {
     return filteredExpenses
         .filter(e => !e.is_transfer)
         .reduce((sum, expense) => sum + expense.amount, 0);
@@ -22,14 +23,13 @@ function _calculateTotalExpenses(filteredExpenses: Expense[]): number {
 
 /**
  * Calculate total expenses for a given month
- * Fixed expenses are always included, variable expenses only for the specified month
- * Transfers are NOT included in total expenses as they don't reduce overall balance
  */
 export function calculateTotalExpenses(expenses: Expense[], yearMonth: number): number {
     return _calculateTotalExpenses(getExpensesForMonth(expenses, yearMonth));
 }
 
-function _calculateTotalTransfers(filteredExpenses: Expense[]): number {
+// Deprecated
+export function _calculateTotalTransfers(filteredExpenses: Expense[]): number {
     return filteredExpenses
         .filter(e => e.is_transfer)
         .reduce((sum, expense) => sum + expense.amount, 0);
@@ -42,7 +42,8 @@ export function calculateTotalTransfers(expenses: Expense[], yearMonth: number):
     return _calculateTotalTransfers(getExpensesForMonth(expenses, yearMonth));
 }
 
-function _calculateExpensesByPaymentMethod(filteredExpenses: Expense[]): Record<PaymentMethod, number> {
+// Deprecated
+export function _calculateExpensesByPaymentMethod(filteredExpenses: Expense[]): Record<PaymentMethod, number> {
     const result: Record<PaymentMethod, number> = {
         efaktura_jag: 0,
         efaktura_fruga: 0,
@@ -70,7 +71,8 @@ export function calculateExpensesByPaymentMethod(
     return _calculateExpensesByPaymentMethod(getExpensesForMonth(expenses, yearMonth));
 }
 
-function _calculateExpensesByPerson(filteredExpenses: Expense[]): { jag: number; fruga: number; gemensamt: number } {
+// Deprecated
+export function _calculateExpensesByPerson(filteredExpenses: Expense[]): { jag: number; fruga: number; gemensamt: number } {
     const result = {
         jag: 0,
         fruga: 0,
@@ -101,8 +103,7 @@ function _calculateExpensesByPerson(filteredExpenses: Expense[]): { jag: number;
 }
 
 /**
- * Calculate expenses grouped by person (excluding already paid and excluding transfers for "To Pay" list)
- * For autogiro_gemensamt, 'pending' also counts as handled (money is in joint account)
+ * Calculate expenses grouped by person
  */
 export function calculateExpensesByPerson(
     expenses: Expense[],
@@ -111,7 +112,8 @@ export function calculateExpensesByPerson(
     return _calculateExpensesByPerson(getExpensesForMonth(expenses, yearMonth));
 }
 
-function _calculateLiquidityByPerson(filteredExpenses: Expense[]): { jag: number; fruga: number; gemensamt: number } {
+// Deprecated
+export function _calculateLiquidityByPerson(filteredExpenses: Expense[]): { jag: number; fruga: number; gemensamt: number } {
     const result = {
         jag: 0,
         fruga: 0,
@@ -141,8 +143,7 @@ function _calculateLiquidityByPerson(filteredExpenses: Expense[]): { jag: number
 }
 
 /**
- * Calculate liquidity needed by person (Bills + Transfers that still need to be paid)
- * For autogiro_gemensamt, 'pending' also counts as handled (money is in joint account)
+ * Calculate liquidity needed by person
  */
 export function calculateLiquidityByPerson(
     expenses: Expense[],
@@ -151,7 +152,8 @@ export function calculateLiquidityByPerson(
     return _calculateLiquidityByPerson(getExpensesForMonth(expenses, yearMonth));
 }
 
-function _calculateTransferToJoint(filteredExpenses: Expense[], splitRatio: number = 0.5): { jag: number; fruga: number } {
+// Deprecated
+export function _calculateTransferToJoint(filteredExpenses: Expense[], splitRatio: number = 0.5): { jag: number; fruga: number } {
     const jointTotal = filteredExpenses
         .filter(e => !e.is_transfer)
         .filter(e => e.payment_method === 'autogiro_gemensamt')
@@ -167,7 +169,6 @@ function _calculateTransferToJoint(filteredExpenses: Expense[], splitRatio: numb
 
 /**
  * Calculate how much each person needs to transfer to the joint account
- * Excludes paid expenses and pending autogiro_gemensamt (money already in joint account)
  */
 export function calculateTransferToJoint(
     expenses: Expense[],
@@ -179,6 +180,7 @@ export function calculateTransferToJoint(
 
 /**
  * Calculate complete monthly overview
+ * Optimized to iterate expenses only once
  */
 export function calculateMonthlyOverview(
     incomes: Income[],
@@ -188,12 +190,87 @@ export function calculateMonthlyOverview(
     const relevantExpenses = getExpensesForMonth(expenses, yearMonth);
 
     const totalIncome = calculateTotalIncome(incomes);
-    const totalExpenses = _calculateTotalExpenses(relevantExpenses);
-    const totalTransfers = _calculateTotalTransfers(relevantExpenses);
-    const expensesByPaymentMethod = _calculateExpensesByPaymentMethod(relevantExpenses);
-    const expensesByPerson = _calculateExpensesByPerson(relevantExpenses);
-    const liquidityByPerson = _calculateLiquidityByPerson(relevantExpenses);
-    const transferToJoint = _calculateTransferToJoint(relevantExpenses);
+
+    // Initial values
+    let totalExpenses = 0;
+    let totalTransfers = 0;
+    let jointTotalForTransfer = 0;
+
+    const expensesByPaymentMethod: Record<PaymentMethod, number> = {
+        efaktura_jag: 0,
+        efaktura_fruga: 0,
+        autogiro_jag: 0,
+        autogiro_fruga: 0,
+        autogiro_gemensamt: 0,
+        transfer: 0,
+    };
+
+    const expensesByPerson = {
+        jag: 0,
+        fruga: 0,
+        gemensamt: 0,
+    };
+
+    const liquidityByPerson = {
+        jag: 0,
+        fruga: 0,
+        gemensamt: 0,
+    };
+
+    // Single pass loop
+    for (const expense of relevantExpenses) {
+        const amount = expense.amount;
+        const isTransfer = !!expense.is_transfer;
+        const method = expense.payment_method;
+        const status = expense.payment_status;
+
+        // 1. Expenses by Payment Method
+        expensesByPaymentMethod[method] += amount;
+
+        // 2. Total Expenses & Total Transfers
+        if (isTransfer) {
+            totalTransfers += amount;
+        } else {
+            totalExpenses += amount;
+
+            // 3. Transfer to Joint Calculation Logic
+            // filter: !is_transfer (already inside else), method == autogiro_gemensamt, status != paid/pending
+            if (method === 'autogiro_gemensamt' && status !== 'paid' && status !== 'pending') {
+                jointTotalForTransfer += amount;
+            }
+        }
+
+        // 4. Expenses By Person & Liquidity By Person
+        // Shared logic for "isHandled"
+        // For autogiro_gemensamt, pending means money is already in joint account
+        const isHandled = status === 'paid' ||
+            (method === 'autogiro_gemensamt' && status === 'pending');
+
+        if (!isHandled) {
+            // Determine attribution
+            let targetPerson: 'jag' | 'fruga' | 'gemensamt' = 'gemensamt';
+            if (method === 'autogiro_jag' || method === 'efaktura_jag') {
+                targetPerson = 'jag';
+            } else if (method === 'autogiro_fruga' || method === 'efaktura_fruga') {
+                targetPerson = 'fruga';
+            }
+
+            // Apply to liquidity (includes transfers)
+            liquidityByPerson[targetPerson] += amount;
+
+            // Apply to expensesByPerson (excludes transfers)
+            if (!isTransfer) {
+                expensesByPerson[targetPerson] += amount;
+            }
+        }
+    }
+
+    // Finalize Transfer to Joint
+    const splitRatio = 0.5;
+    const transferToJoint = {
+        jag: Math.round(jointTotalForTransfer * splitRatio * 100) / 100,
+        fruga: Math.round(jointTotalForTransfer * (1 - splitRatio) * 100) / 100,
+    };
 
     return {
         yearMonth,
