@@ -58,5 +58,23 @@ describe('Statistics API', () => {
             // Expenses: 5500 (override)
             expect(feb.totalExpenses).toBe(5500);
         });
+
+        it('should validate start and end parameters', async () => {
+            // Invalid format (too small)
+            let res = await request(app).get('/api/statistics/monthly?start=189912&end=202301');
+            expect(res.status).toBe(400);
+
+            // Invalid format (too large)
+            res = await request(app).get('/api/statistics/monthly?start=202301&end=210001');
+            expect(res.status).toBe(400);
+
+            // Invalid range (start > end)
+            res = await request(app).get('/api/statistics/monthly?start=202302&end=202301');
+            expect(res.status).toBe(400);
+
+            // Non-numeric
+            res = await request(app).get('/api/statistics/monthly?start=abc&end=def');
+            expect(res.status).toBe(400);
+        });
     });
 });
