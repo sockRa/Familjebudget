@@ -9,8 +9,18 @@ router.get('/monthly', (req: Request, res: Response) => {
     const start = parseInt(req.query.start as string);
     const end = parseInt(req.query.end as string);
 
-    if (isNaN(start) || isNaN(end) || start > end) {
-        return res.status(400).json({ error: 'Invalid start/end parameters' });
+    if (isNaN(start) || isNaN(end)) {
+        return res.status(400).json({ error: 'Start and end must be valid numbers' });
+    }
+
+    // Validate range and format (YYYYMM)
+    // Security: Prevent loop exhaustion and invalid queries
+    if (start < 190001 || start > 209912 || end < 190001 || end > 209912) {
+        return res.status(400).json({ error: 'Date range must be between 190001 and 209912' });
+    }
+
+    if (start > end) {
+        return res.status(400).json({ error: 'Start date must be before end date' });
     }
 
     // Get all months in range
