@@ -72,6 +72,8 @@ export const YearMonthParamSchema = z.object({
     yearMonth: z.string().regex(/^\d{6}$/, 'Använd format YYYYMM').transform(Number),
 });
 
+export const HideExpenseParamsSchema = IdParamSchema.merge(YearMonthParamSchema);
+
 // Settings schemas
 export const SettingsSchema = z.object({
     person1Name: z.string().min(1).max(50).optional(),
