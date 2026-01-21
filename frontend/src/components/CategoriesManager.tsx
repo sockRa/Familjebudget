@@ -12,14 +12,19 @@ export function CategoriesManager({
     onUpdate
 }: CategoriesManagerProps) {
     const [newName, setNewName] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
     const handleAdd = async () => {
-        if (!newName.trim()) return;
+        if (!newName.trim() || isSubmitting) return;
+        setIsSubmitting(true);
         try {
             await categoriesApi.create({ name: newName });
             setNewName('');
             onUpdate();
         } catch (err) {
             console.error('Failed to add category:', err);
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -55,17 +60,25 @@ export function CategoriesManager({
             </div>
             <div className="form-row" style={{ alignItems: 'flex-end' }}>
                 <div className="form-group" style={{ flex: 1 }}>
-                    <label className="form-label">Ny kategori</label>
+                    <label htmlFor="new-category" className="form-label">Ny kategori</label>
                     <input
+                        id="new-category"
                         type="text"
                         className="form-input"
                         value={newName}
                         onChange={e => setNewName(e.target.value)}
                         placeholder="Kategorinamn"
+                        disabled={isSubmitting}
+                        onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
                     />
                 </div>
-                <button className="btn btn-primary" onClick={handleAdd} style={{ height: 38 }}>
-                    Lägg till
+                <button
+                    className="btn btn-primary"
+                    onClick={handleAdd}
+                    style={{ height: 38 }}
+                    disabled={isSubmitting || !newName.trim()}
+                >
+                    {isSubmitting ? 'Lägger till...' : 'Lägg till'}
                 </button>
             </div>
         </div>
