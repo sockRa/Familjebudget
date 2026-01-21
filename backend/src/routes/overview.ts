@@ -16,7 +16,8 @@ router.get('/:yearMonth', (req: Request, res: Response) => {
   const incomes = db.getIncomes(yearMonth) as Income[];
   const expenses = db.getExpenses(yearMonth) as Expense[];
 
-  const overview = calculateMonthlyOverview(incomes, expenses, yearMonth);
+  // expenses are already filtered by db.getExpenses(yearMonth), so we pass true to skip redundant filtering
+  const overview = calculateMonthlyOverview(incomes, expenses, yearMonth, true);
   res.json(overview);
 });
 

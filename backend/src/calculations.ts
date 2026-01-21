@@ -185,9 +185,11 @@ export function calculateTransferToJoint(
 export function calculateMonthlyOverview(
     incomes: Income[],
     expenses: Expense[],
-    yearMonth: number
+    yearMonth: number,
+    isPreFiltered: boolean = false
 ): MonthlyOverview {
-    const relevantExpenses = getExpensesForMonth(expenses, yearMonth);
+    // Optimization: Skip filtering if the caller guarantees expenses are already for this month
+    const relevantExpenses = isPreFiltered ? expenses : getExpensesForMonth(expenses, yearMonth);
 
     const totalIncome = calculateTotalIncome(incomes);
 
