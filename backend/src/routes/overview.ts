@@ -16,7 +16,7 @@ router.get('/:yearMonth', (req: Request, res: Response) => {
   const incomes = db.getIncomes(yearMonth) as Income[];
   const expenses = db.getExpenses(yearMonth) as Expense[];
 
-  const overview = calculateMonthlyOverview(incomes, expenses, yearMonth);
+  const overview = calculateMonthlyOverview(incomes, expenses, yearMonth, true);
   res.json(overview);
 });
 

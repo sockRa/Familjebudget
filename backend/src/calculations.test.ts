@@ -138,6 +138,29 @@ describe('calculateMonthlyOverview', () => {
         expect(result.balance).toBe(40102); // Income - Expenses
         expect(result.unbudgeted).toBe(35102); // Income - Expenses - Transfers (40102 - 5000)
     });
+
+    it('should respect isPreFiltered=true and skip filtering', () => {
+        // Create an array with mixed expenses but pretend it is pre-filtered
+        // If filtering was skipped, it should include ALL expenses passed
+        // This is a negative test: we pass "wrong" data but say it's pre-filtered, so it should process it.
+        const mixedExpenses: Expense[] = [
+             // Fixed expense (usually kept)
+             { id: 1, name: 'Hyra', amount: 1000, category_id: 1, expense_type: 'fixed', payment_method: 'autogiro_gemensamt', payment_status: 'unpaid', year_month: null, overrides_expense_id: null, created_at: '' },
+             // Variable expense for WRONG month (should be filtered out normally, but kept if pre-filtered)
+             { id: 6, name: 'Wrong Month', amount: 500, category_id: 1, expense_type: 'variable', payment_method: 'autogiro_gemensamt', payment_status: 'unpaid', year_month: 202501, overrides_expense_id: null, created_at: '' },
+        ];
+
+        // With isPreFiltered = true, 'Wrong Month' (500) should be included
+        const result = calculateMonthlyOverview(mockIncomes, mixedExpenses, 202412, true);
+
+        // 1000 + 500 = 1500
+        expect(result.totalExpenses).toBe(1500);
+
+        // With isPreFiltered = false (default), 'Wrong Month' should be excluded
+        const resultDefault = calculateMonthlyOverview(mockIncomes, mixedExpenses, 202412);
+        // 1000
+        expect(resultDefault.totalExpenses).toBe(1000);
+    });
 });
 
 describe('getExpensesForMonth', () => {
