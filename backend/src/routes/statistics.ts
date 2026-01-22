@@ -1,27 +1,15 @@
 import { Router, Request, Response } from 'express';
 import db from '../db/sqlite.js';
+import { validateQuery } from '../middleware/validate.js';
+import { StatisticsQuerySchema } from '../db/schemas.js';
 import type { MonthlyStats, PaymentMethod } from '../types.js';
 
 const router = Router();
 
 // Get monthly statistics
-router.get('/monthly', (req: Request, res: Response) => {
-    const start = parseInt(req.query.start as string);
-    const end = parseInt(req.query.end as string);
-
-    if (isNaN(start) || isNaN(end)) {
-        return res.status(400).json({ error: 'Start and end must be valid numbers' });
-    }
-
-    // Validate range and format (YYYYMM)
-    // Security: Prevent loop exhaustion and invalid queries
-    if (start < 190001 || start > 209912 || end < 190001 || end > 209912) {
-        return res.status(400).json({ error: 'Date range must be between 190001 and 209912' });
-    }
-
-    if (start > end) {
-        return res.status(400).json({ error: 'Start date must be before end date' });
-    }
+router.get('/monthly', validateQuery(StatisticsQuerySchema), (req: Request, res: Response) => {
+    // Schema validation guarantees numbers
+    const { start, end } = req.query as unknown as { start: number; end: number };
 
     // Get all months in range
     const months: number[] = [];

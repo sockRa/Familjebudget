@@ -63,6 +63,14 @@ export const YearMonthQuerySchema = z.object({
     yearMonth: z.string().regex(/^\d{6}$/).transform(Number).optional(),
 });
 
+export const StatisticsQuerySchema = z.object({
+    start: z.string().regex(/^\d{6}$/, 'Start date must be a 6-digit number (YYYYMM)').transform(Number).refine(val => val >= 190001 && val <= 209912, 'Date range must be between 190001 and 209912'),
+    end: z.string().regex(/^\d{6}$/, 'End date must be a 6-digit number (YYYYMM)').transform(Number).refine(val => val >= 190001 && val <= 209912, 'Date range must be between 190001 and 209912'),
+}).refine(data => data.start <= data.end, {
+    message: 'Start date must be before end date',
+    path: ['start'], // Attach error to start field
+});
+
 // ID parameter schema
 export const IdParamSchema = z.object({
     id: z.string().regex(/^\d+$/, 'Ogiltigt ID').transform(Number),
