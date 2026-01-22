@@ -399,25 +399,27 @@ function App() {
                 </div>
             )}
 
-            <div className="tabs">
-                <button className={`tab ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')}>
-                    Översikt
-                </button>
-                <button className={`tab ${activeTab === 'incomes' ? 'active' : ''}`} onClick={() => setActiveTab('incomes')}>
-                    Inkomster
-                </button>
-                <button className={`tab ${activeTab === 'planning' ? 'active' : ''}`} onClick={() => setActiveTab('planning')}>
-                    Planering
-                </button>
-                <button className={`tab ${activeTab === 'statistics' ? 'active' : ''}`} onClick={() => setActiveTab('statistics')}>
-                    Statistik
-                </button>
-                <button className={`tab ${activeTab === 'categories' ? 'active' : ''}`} onClick={() => setActiveTab('categories')}>
-                    Kategorier
-                </button>
-                <button className={`tab ${activeTab === 'settings' ? 'active' : ''}`} onClick={() => setActiveTab('settings')}>
-                    Inställningar
-                </button>
+            <div className="tabs" role="tablist" aria-label="Huvudmeny">
+                {[
+                    { id: 'overview', label: 'Översikt' },
+                    { id: 'incomes', label: 'Inkomster' },
+                    { id: 'planning', label: 'Planering' },
+                    { id: 'statistics', label: 'Statistik' },
+                    { id: 'categories', label: 'Kategorier' },
+                    { id: 'settings', label: 'Inställningar' },
+                ].map((tab) => (
+                    <button
+                        key={tab.id}
+                        id={`tab-${tab.id}`}
+                        role="tab"
+                        aria-selected={activeTab === tab.id}
+                        aria-controls={`panel-${tab.id}`}
+                        className={`tab ${activeTab === tab.id ? 'active' : ''}`}
+                        onClick={() => setActiveTab(tab.id as Tab)}
+                    >
+                        {tab.label}
+                    </button>
+                ))}
             </div>
 
             {isLoading && activeTab === 'overview' && (
@@ -427,7 +429,7 @@ function App() {
             )}
 
             {activeTab === 'overview' && overview && (
-                <>
+                <div role="tabpanel" id="panel-overview" aria-labelledby="tab-overview">
                     <SummaryCards overview={overview} previousOverview={previousOverview} settings={settings} />
 
                     {/* Status filter */}
@@ -512,11 +514,11 @@ function App() {
                     >
                         +
                     </button>
-                </>
+                </div>
             )}
 
             {activeTab === 'incomes' && (
-                <div className="card">
+                <div className="card" role="tabpanel" id="panel-incomes" aria-labelledby="tab-incomes">
                     <div className="section-header">
                         <span className="section-title">Inkomster ({formatYearMonth(currentMonth)})</span>
                         <span className="section-total">
@@ -569,24 +571,32 @@ function App() {
             )}
 
             {activeTab === 'statistics' && (
-                <StatisticsPanel currentMonth={currentMonth} settings={settings} />
+                <div role="tabpanel" id="panel-statistics" aria-labelledby="tab-statistics">
+                    <StatisticsPanel currentMonth={currentMonth} settings={settings} />
+                </div>
             )}
 
             {activeTab === 'planning' && (
-                <PlanningPanel
-                    expenses={expenses}
-                    incomes={incomes}
-                    currentMonth={currentMonth}
-                    onUpdate={loadData}
-                />
+                <div role="tabpanel" id="panel-planning" aria-labelledby="tab-planning">
+                    <PlanningPanel
+                        expenses={expenses}
+                        incomes={incomes}
+                        currentMonth={currentMonth}
+                        onUpdate={loadData}
+                    />
+                </div>
             )}
 
             {activeTab === 'categories' && (
-                <CategoriesManager categories={categories} onUpdate={loadData} />
+                <div role="tabpanel" id="panel-categories" aria-labelledby="tab-categories">
+                    <CategoriesManager categories={categories} onUpdate={loadData} />
+                </div>
             )}
 
             {activeTab === 'settings' && (
-                <SettingsPanel settings={settings} onSave={handleUpdateSettings} />
+                <div role="tabpanel" id="panel-settings" aria-labelledby="tab-settings">
+                    <SettingsPanel settings={settings} onSave={handleUpdateSettings} />
+                </div>
             )}
 
             {/* Expense Modal */}
