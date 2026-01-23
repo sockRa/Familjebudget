@@ -1,13 +1,15 @@
 import { Router, Request, Response } from 'express';
+import { z } from 'zod';
 import db from '../db.js';
-import { validate } from '../middleware/validate.js';
-import { IncomeSchema } from '../db/schemas.js';
+import { validate, validateQuery, validateParams } from '../middleware/validate.js';
+import { IncomeSchema, YearMonthQuerySchema, IdParamSchema } from '../db/schemas.js';
 
 const router = Router();
 
 // Get all incomes (optionally filtered by month)
-router.get('/', (req: Request, res: Response) => {
-    const yearMonth = req.query.yearMonth ? parseInt(req.query.yearMonth as string) : undefined;
+router.get('/', validateQuery(YearMonthQuerySchema), (req: Request, res: Response) => {
+    const query = req.query as unknown as z.infer<typeof YearMonthQuerySchema>;
+    const yearMonth = query.yearMonth;
     res.json(db.getIncomes(yearMonth));
 });
 
@@ -24,8 +26,8 @@ router.post('/', validate(IncomeSchema), (req: Request, res: Response) => {
 });
 
 // Update income
-router.put('/:id', validate(IncomeSchema.partial()), (req: Request, res: Response) => {
-    const id = parseInt(req.params.id);
+router.put('/:id', validateParams(IdParamSchema), validate(IncomeSchema.partial()), (req: Request, res: Response) => {
+    const { id } = req.params as unknown as z.infer<typeof IdParamSchema>;
     const updates = req.body;
 
     const income = db.updateIncome(id, updates);
@@ -36,8 +38,8 @@ router.put('/:id', validate(IncomeSchema.partial()), (req: Request, res: Respons
 });
 
 // Delete income
-router.delete('/:id', (req: Request, res: Response) => {
-    const id = parseInt(req.params.id);
+router.delete('/:id', validateParams(IdParamSchema), (req: Request, res: Response) => {
+    const { id } = req.params as unknown as z.infer<typeof IdParamSchema>;
     if (!db.deleteIncome(id)) {
         return res.status(404).json({ error: 'Income not found' });
     }
