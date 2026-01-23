@@ -179,3 +179,21 @@ describe('Regression: Multi-month Override Filtering', () => {
         expect(calculateTotalExpenses(expenses, 202412)).toBe(1500);
     });
 });
+
+describe('Optimization: isPreFiltered', () => {
+    it('should skip filtering when isPreFiltered is true', () => {
+        const dirtyExpenses: Expense[] = [
+            // This should normally be filtered out by getExpensesForMonth (it's for 202501)
+            {
+                id: 1, name: 'Future', amount: 1000,
+                category_id: 1, expense_type: 'variable',
+                payment_method: 'card', payment_status: 'paid',
+                year_month: 202501, overrides_expense_id: null, created_at: '',
+                is_transfer: 0
+            } as any
+        ];
+
+        const result = calculateMonthlyOverview(mockIncomes, dirtyExpenses, 202412, true);
+        expect(result.totalExpenses).toBe(1000);
+    });
+});
