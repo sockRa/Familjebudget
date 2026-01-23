@@ -12,7 +12,8 @@ export function CategoriesManager({
     onUpdate
 }: CategoriesManagerProps) {
     const [newName, setNewName] = useState('');
-    const handleAdd = async () => {
+    const handleAdd = async (e: React.FormEvent) => {
+        e.preventDefault();
         if (!newName.trim()) return;
         try {
             await categoriesApi.create({ name: newName });
@@ -53,21 +54,23 @@ export function CategoriesManager({
                     </div>
                 ))}
             </div>
-            <div className="form-row" style={{ alignItems: 'flex-end' }}>
+            <form onSubmit={handleAdd} className="form-row" style={{ alignItems: 'flex-end' }}>
                 <div className="form-group" style={{ flex: 1 }}>
-                    <label className="form-label">Ny kategori</label>
+                    <label className="form-label" htmlFor="new-category-input">Ny kategori</label>
                     <input
+                        id="new-category-input"
                         type="text"
                         className="form-input"
                         value={newName}
                         onChange={e => setNewName(e.target.value)}
                         placeholder="Kategorinamn"
+                        autoComplete="off"
                     />
                 </div>
-                <button className="btn btn-primary" onClick={handleAdd} style={{ height: 38 }}>
+                <button type="submit" className="btn btn-primary" style={{ height: 38 }}>
                     Lägg till
                 </button>
-            </div>
+            </form>
         </div>
     );
 }
