@@ -221,10 +221,8 @@ function App() {
         }
     };
 
-    const handleDeleteExpense = useCallback((id: number) => {
-        const expense = expenses.find(e => e.id === id);
-        if (!expense) return;
-
+    const handleDeleteExpense = useCallback((expense: Expense) => {
+        const id = expense.id;
         // For fixed expenses without override, give option to delete permanently or just for this month
         const isBaseFixedExpense = expense.expense_type === 'fixed' && !expense.overrides_expense_id;
 
@@ -259,12 +257,10 @@ function App() {
                 () => deleteAction(true)
             );
         }
-    }, [expenses, currentMonth, loadData, closeConfirm, showConfirm]);
+    }, [currentMonth, loadData, closeConfirm, showConfirm]);
 
-    const handleToggleStatus = useCallback(async (id: number, status: PaymentStatus) => {
-        const expense = expenses.find(e => e.id === id);
-        if (!expense) return;
-
+    const handleToggleStatus = useCallback(async (expense: Expense, status: PaymentStatus) => {
+        const id = expense.id;
         // Optimistic update - update local state immediately
         setExpenses(prev => prev.map(e =>
             e.id === id ? { ...e, payment_status: status } : e
@@ -286,7 +282,7 @@ function App() {
                 e.id === id ? { ...e, payment_status: expense.payment_status } : e
             ));
         }
-    }, [expenses, currentMonth, loadData]);
+    }, [currentMonth, loadData]);
 
     // Memoized to keep ExpenseItem props stable
     const handleEditExpense = useCallback((e: Expense) => {
