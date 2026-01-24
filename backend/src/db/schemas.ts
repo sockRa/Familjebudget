@@ -77,3 +77,4 @@ export const SettingsSchema = z.object({
     person1Name: z.string().min(1).max(50).optional(),
     person2Name: z.string().min(1).max(50).optional(),
 });
+export const HideExpenseParamsSchema = IdParamSchema.merge(YearMonthParamSchema);
