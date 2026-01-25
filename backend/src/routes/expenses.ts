@@ -1,14 +1,14 @@
 import { Router, Request, Response } from 'express';
 import db from '../db.js';
-import { validate } from '../middleware/validate.js';
-import { ExpenseSchema, ExpenseUpdateSchema } from '../db/schemas.js';
+import { validate, validateParams, validateQuery } from '../middleware/validate.js';
+import { ExpenseSchema, ExpenseUpdateSchema, YearMonthQuerySchema, IdParamSchema, YearMonthParamSchema } from '../db/schemas.js';
 
 const router = Router();
 
 // Get expenses (optionally filtered by month)
-router.get('/', (req: Request, res: Response) => {
-    const yearMonth = req.query.year_month ? parseInt(req.query.year_month as string) : undefined;
-    res.json(db.getExpenses(yearMonth));
+router.get('/', validateQuery(YearMonthQuerySchema), (req: Request, res: Response) => {
+    const { year_month } = req.query as unknown as { year_month?: number };
+    res.json(db.getExpenses(year_month));
 });
 
 // Create expense
@@ -24,8 +24,8 @@ router.post('/', validate(ExpenseSchema), (req: Request, res: Response) => {
 });
 
 // Update expense
-router.put('/:id', validate(ExpenseUpdateSchema), (req: Request, res: Response) => {
-    const id = parseInt(req.params.id);
+router.put('/:id', validateParams(IdParamSchema), validate(ExpenseUpdateSchema), (req: Request, res: Response) => {
+    const { id } = req.params as unknown as { id: number };
     const updates = req.body;
 
     const expense = db.updateExpense(id, updates);
@@ -36,8 +36,8 @@ router.put('/:id', validate(ExpenseUpdateSchema), (req: Request, res: Response) 
 });
 
 // Delete expense
-router.delete('/:id', (req: Request, res: Response) => {
-    const id = parseInt(req.params.id);
+router.delete('/:id', validateParams(IdParamSchema), (req: Request, res: Response) => {
+    const { id } = req.params as unknown as { id: number };
     if (!db.deleteExpense(id)) {
         return res.status(404).json({ error: 'Expense not found' });
     }
@@ -45,8 +45,8 @@ router.delete('/:id', (req: Request, res: Response) => {
 });
 
 // Create override for a fixed expense (monthly copy)
-router.post('/:id/override', validate(ExpenseUpdateSchema), (req: Request, res: Response) => {
-    const originalId = parseInt(req.params.id);
+router.post('/:id/override', validateParams(IdParamSchema), validate(ExpenseUpdateSchema), (req: Request, res: Response) => {
+    const { id: originalId } = req.params as unknown as { id: number };
     const { year_month, ...overrideData } = req.body;
 
     if (!year_month) {
@@ -62,13 +62,8 @@ router.post('/:id/override', validate(ExpenseUpdateSchema), (req: Request, res: 
 });
 
 // Hide a fixed expense for a specific month (soft delete)
-router.post('/:id/hide/:yearMonth', (req: Request, res: Response) => {
-    const originalId = parseInt(req.params.id);
-    const yearMonth = parseInt(req.params.yearMonth);
-
-    if (!yearMonth || isNaN(yearMonth)) {
-        return res.status(400).json({ error: 'Valid yearMonth is required' });
-    }
+router.post('/:id/hide/:yearMonth', validateParams(IdParamSchema.merge(YearMonthParamSchema)), (req: Request, res: Response) => {
+    const { id: originalId, yearMonth } = req.params as unknown as { id: number, yearMonth: number };
 
     try {
         const deleted = db.createDeletedOverride(originalId, yearMonth);
