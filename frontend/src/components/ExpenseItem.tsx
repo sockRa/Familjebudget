@@ -10,8 +10,8 @@ interface ExpenseItemProps {
     expense: Expense;
     settings: Settings;
     onEdit: (e: Expense) => void;
-    onDelete: (id: number) => void;
-    onToggleStatus: (id: number, status: PaymentStatus) => void;
+    onDelete: (expense: Expense) => void;
+    onToggleStatus: (expense: Expense, status: PaymentStatus) => void;
 }
 
 // Memoized component to prevent re-renders when parent state changes but props remain stable
@@ -27,7 +27,7 @@ export const ExpenseItem = memo(function ExpenseItem({
     const nextStatus = statusOrder[(currentIndex + 1) % 3];
 
     const cycleStatus = () => {
-        onToggleStatus(expense.id, nextStatus);
+        onToggleStatus(expense, nextStatus);
     };
 
     const currentStatusLabel = PAYMENT_STATUS_LABELS[expense.payment_status || 'unpaid'];
@@ -71,7 +71,7 @@ export const ExpenseItem = memo(function ExpenseItem({
                 </button>
                 <button
                     className="btn btn-icon btn-danger"
-                    onClick={() => onDelete(expense.id)}
+                    onClick={() => onDelete(expense)}
                     aria-label={`Ta bort ${expense.name}`}
                     title="Ta bort"
                 >

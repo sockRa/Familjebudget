@@ -221,19 +221,16 @@ function App() {
         }
     };
 
-    const handleDeleteExpense = useCallback((id: number) => {
-        const expense = expenses.find(e => e.id === id);
-        if (!expense) return;
-
+    const handleDeleteExpense = useCallback((expense: Expense) => {
         // For fixed expenses without override, give option to delete permanently or just for this month
         const isBaseFixedExpense = expense.expense_type === 'fixed' && !expense.overrides_expense_id;
 
         const deleteAction = async (permanent: boolean) => {
             try {
                 if (isBaseFixedExpense && !permanent) {
-                    await expensesApi.hideForMonth(id, currentMonth);
+                    await expensesApi.hideForMonth(expense.id, currentMonth);
                 } else {
-                    await expensesApi.delete(id);
+                    await expensesApi.delete(expense.id);
                 }
                 loadData();
             } catch (err) {
@@ -259,23 +256,20 @@ function App() {
                 () => deleteAction(true)
             );
         }
-    }, [expenses, currentMonth, loadData, closeConfirm, showConfirm]);
+    }, [currentMonth, loadData, closeConfirm, showConfirm]);
 
-    const handleToggleStatus = useCallback(async (id: number, status: PaymentStatus) => {
-        const expense = expenses.find(e => e.id === id);
-        if (!expense) return;
-
+    const handleToggleStatus = useCallback(async (expense: Expense, status: PaymentStatus) => {
         // Optimistic update - update local state immediately
         setExpenses(prev => prev.map(e =>
-            e.id === id ? { ...e, payment_status: status } : e
+            e.id === expense.id ? { ...e, payment_status: status } : e
         ));
 
         try {
             if (expense.expense_type === 'fixed' && !expense.overrides_expense_id) {
                 // Create override for status change
-                await expensesApi.createOverride(id, currentMonth, { payment_status: status });
+                await expensesApi.createOverride(expense.id, currentMonth, { payment_status: status });
             } else {
-                await expensesApi.update(id, { payment_status: status });
+                await expensesApi.update(expense.id, { payment_status: status });
             }
             // Silently refresh in background to sync any server-side changes
             loadData();
@@ -283,10 +277,10 @@ function App() {
             console.error('Failed to update status:', err);
             // Revert on error
             setExpenses(prev => prev.map(e =>
-                e.id === id ? { ...e, payment_status: expense.payment_status } : e
+                e.id === expense.id ? { ...e, payment_status: expense.payment_status } : e
             ));
         }
-    }, [expenses, currentMonth, loadData]);
+    }, [currentMonth, loadData]);
 
     // Memoized to keep ExpenseItem props stable
     const handleEditExpense = useCallback((e: Expense) => {
