@@ -11,7 +11,7 @@ interface IncomeModalProps {
     income: Income | null;
     settings: Settings;
     currentMonth: number;
-    onSave: (data: { name: string; owner: 'jag' | 'fruga'; amount: number; year_month: number }) => void;
+    onSave: (data: { name: string; owner: 'jag' | 'fruga'; amount: number; year_month: number }) => Promise<void>;
     onClose: () => void;
 }
 
@@ -22,12 +22,13 @@ export function IncomeModal({
     onSave,
     onClose,
 }: IncomeModalProps) {
+    const [isSaving, setIsSaving] = useState(false);
     const [name, setName] = useState(income?.name || '');
     const [owner, setOwner] = useState<'jag' | 'fruga'>(income?.owner as 'jag' | 'fruga' || 'jag');
     const [amount, setAmount] = useState(income?.amount?.toString() || '');
     const [errors, setErrors] = useState<Record<string, string>>({});
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
         const formData = {
@@ -45,7 +46,12 @@ export function IncomeModal({
         }
 
         setErrors({});
-        onSave(result.data as { name: string; owner: 'jag' | 'fruga'; amount: number; year_month: number });
+        setIsSaving(true);
+        try {
+            await onSave(result.data as { name: string; owner: 'jag' | 'fruga'; amount: number; year_month: number });
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     return (
@@ -53,7 +59,7 @@ export function IncomeModal({
             <div className="modal" onClick={e => e.stopPropagation()}>
                 <div className="modal-header">
                     <h2 className="modal-title">{income ? 'Redigera inkomst' : 'Ny inkomst'}</h2>
-                    <button className="btn btn-icon btn-secondary" onClick={onClose} aria-label="Stäng">✕</button>
+                    <button className="btn btn-icon btn-secondary" onClick={onClose} aria-label="Stäng" disabled={isSaving}>✕</button>
                 </div>
                 <form onSubmit={handleSubmit}>
                     <div className="modal-body">
@@ -102,8 +108,24 @@ export function IncomeModal({
                         </div>
                     </div>
                     <div className="modal-footer">
-                        <button type="button" className="btn btn-secondary" onClick={onClose}>Avbryt</button>
-                        <button type="submit" className="btn btn-primary">Spara</button>
+                        <button type="button" className="btn btn-secondary" onClick={onClose} disabled={isSaving}>Avbryt</button>
+                        <button
+                            type="submit"
+                            className="btn btn-primary"
+                            disabled={isSaving}
+                            aria-label={isSaving ? "Sparar..." : "Spara"}
+                        >
+                            {isSaving ? (
+                                <div className="loading-spinner" style={{
+                                    width: '1em',
+                                    height: '1em',
+                                    borderWidth: '2px',
+                                    marginBottom: 0,
+                                    borderColor: 'white',
+                                    borderTopColor: 'transparent'
+                                }} />
+                            ) : 'Spara'}
+                        </button>
                     </div>
                 </form>
             </div>
