@@ -4,7 +4,7 @@ import {
     calculateTotalExpenses,
     calculateExpensesByPaymentMethod,
     calculateTransferToJoint,
-    calculateMonthlyOverview,
+    calculateMonthlyOverviewPreFiltered,
     calculateExpensesByPerson,
     getExpensesForMonth,
 } from './calculations.js';
@@ -108,9 +108,10 @@ describe('calculateTransferToJoint', () => {
     });
 });
 
-describe('calculateMonthlyOverview', () => {
+describe('calculateMonthlyOverviewPreFiltered', () => {
     it('should calculate complete overview correctly', () => {
-        const result = calculateMonthlyOverview(mockIncomes, mockExpenses, 202412);
+        const relevantExpenses = getExpensesForMonth(mockExpenses, 202412);
+        const result = calculateMonthlyOverviewPreFiltered(mockIncomes, relevantExpenses, 202412);
 
         expect(result.yearMonth).toBe(202412);
         expect(result.totalIncome).toBe(56250);
@@ -130,7 +131,8 @@ describe('calculateMonthlyOverview', () => {
             { id: 7, name: 'Sparande', amount: 5000, category_id: 1, expense_type: 'fixed', payment_method: 'transfer', payment_status: 'paid', year_month: null, overrides_expense_id: null, created_at: '', is_transfer: 1 }
         ];
 
-        const result = calculateMonthlyOverview(mockIncomes, expensesWithTransfer, 202412);
+        const relevantExpenses = getExpensesForMonth(expensesWithTransfer, 202412);
+        const result = calculateMonthlyOverviewPreFiltered(mockIncomes, relevantExpenses, 202412);
 
         expect(result.totalIncome).toBe(56250);
         expect(result.totalExpenses).toBe(16148); // Transfers excluded from expenses

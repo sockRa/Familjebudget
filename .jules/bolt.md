@@ -5,3 +5,7 @@
 ## 2025-01-28 - Removing State Dependencies from Event Handlers
 **Learning:** Passing full objects (like `Expense`) to handlers instead of IDs allows removing the parent state array (`expenses`) from `useCallback` dependencies. This stabilizes the handler references, ensuring `React.memo` effectively skips re-renders for unchanged list items.
 **Action:** When optimizing lists with `React.memo`, refactor child-to-parent callbacks to pass necessary data directly, avoiding lookups in parent state that force handler recreation on every state change.
+
+## 2025-01-28 - Explicit Naming for Pre-Filtered Optimizations
+**Learning:** Optimizing by removing redundant filters can trigger "breaking change" or "safety" concerns if the function's contract isn't explicit. Reviewers worry about callers passing unfiltered data.
+**Action:** When removing internal safeguards (like filters) for performance, rename the function (e.g., `calculateMonthlyOverviewPreFiltered`) to explicitly state the input requirements in the name, preventing misuse and satisfying safety concerns.
