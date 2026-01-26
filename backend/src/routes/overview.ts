@@ -2,16 +2,14 @@ import { Router, Request, Response } from 'express';
 import db from '../db.js';
 import { calculateMonthlyOverview } from '../calculations.js';
 import type { Income, Expense } from '../types.js';
+import { validateParams } from '../middleware/validate.js';
+import { YearMonthParamSchema } from '../db/schemas.js';
 
 const router = Router();
 
 // Get monthly overview
-router.get('/:yearMonth', (req: Request, res: Response) => {
-  const yearMonth = parseInt(req.params.yearMonth);
-
-  if (isNaN(yearMonth) || yearMonth < 190001 || yearMonth > 209912) {
-    return res.status(400).json({ error: 'Invalid yearMonth format. Use YYYYMM.' });
-  }
+router.get('/:yearMonth', validateParams(YearMonthParamSchema), (req: Request, res: Response) => {
+  const { yearMonth } = req.params as unknown as { yearMonth: number };
 
   const incomes = db.getIncomes(yearMonth) as Income[];
   const expenses = db.getExpenses(yearMonth) as Expense[];
