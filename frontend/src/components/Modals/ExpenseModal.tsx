@@ -13,7 +13,7 @@ interface ExpenseModalProps {
     categories: Category[];
     settings: Settings;
     currentMonth: number;
-    onSave: (data: any) => void;
+    onSave: (data: any) => Promise<void>;
     onClose: () => void;
     onCategoryCreated: () => void;
 }
@@ -27,6 +27,7 @@ export function ExpenseModal({
     onClose,
     onCategoryCreated,
 }: ExpenseModalProps) {
+    const [isSaving, setIsSaving] = useState(false);
     const [name, setName] = useState(expense?.name || '');
     const [amount, setAmount] = useState(expense?.amount?.toString() || '');
     const [categoryId, setCategoryId] = useState(expense?.category_id?.toString() || '');
@@ -43,7 +44,7 @@ export function ExpenseModal({
     const [newCategoryName, setNewCategoryName] = useState('');
     const [isCreatingCategory, setIsCreatingCategory] = useState(false);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
         const formData = {
@@ -64,10 +65,15 @@ export function ExpenseModal({
         }
 
         setErrors({});
-        onSave({
-            ...result.data,
-            year_month: expenseType === 'variable' ? currentMonth : null,
-        });
+        setIsSaving(true);
+        try {
+            await onSave({
+                ...result.data,
+                year_month: expenseType === 'variable' ? currentMonth : null,
+            });
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const handleCreateCategory = async () => {
@@ -103,7 +109,7 @@ export function ExpenseModal({
             <div className="modal" onClick={e => e.stopPropagation()}>
                 <div className="modal-header">
                     <h2 className="modal-title">{expense ? 'Redigera utgift' : 'Ny utgift'}</h2>
-                    <button className="btn btn-icon btn-secondary" onClick={onClose} aria-label="Stäng">✕</button>
+                    <button className="btn btn-icon btn-secondary" onClick={onClose} aria-label="Stäng" disabled={isSaving}>✕</button>
                 </div>
                 <form onSubmit={handleSubmit}>
                     <div className="modal-body">
@@ -257,8 +263,24 @@ export function ExpenseModal({
                     </div>
 
                     <div className="modal-footer">
-                        <button type="button" className="btn btn-secondary" onClick={onClose}>Avbryt</button>
-                        <button type="submit" className="btn btn-primary">Spara</button>
+                        <button type="button" className="btn btn-secondary" onClick={onClose} disabled={isSaving}>Avbryt</button>
+                        <button
+                            type="submit"
+                            className="btn btn-primary"
+                            disabled={isSaving}
+                            aria-label={isSaving ? "Sparar..." : "Spara"}
+                        >
+                            {isSaving ? (
+                                <div className="loading-spinner" style={{
+                                    width: '1em',
+                                    height: '1em',
+                                    borderWidth: '2px',
+                                    marginBottom: 0,
+                                    borderColor: 'white',
+                                    borderTopColor: 'transparent'
+                                }} />
+                            ) : 'Spara'}
+                        </button>
                     </div>
                 </form>
             </div>
