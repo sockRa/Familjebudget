@@ -59,8 +59,8 @@ export const ExpenseUpdateSchema = z.object({
 
 // Query parameter schemas
 export const YearMonthQuerySchema = z.object({
-    year_month: z.string().regex(/^\d{6}$/).transform(Number).optional(),
-    yearMonth: z.string().regex(/^\d{6}$/).transform(Number).optional(),
+    year_month: z.string().regex(/^\d{6}$/).transform(Number).pipe(z.number().min(190001).max(209912)).optional(),
+    yearMonth: z.string().regex(/^\d{6}$/).transform(Number).pipe(z.number().min(190001).max(209912)).optional(),
 });
 
 // ID parameter schema
@@ -69,7 +69,7 @@ export const IdParamSchema = z.object({
 });
 
 export const YearMonthParamSchema = z.object({
-    yearMonth: z.string().regex(/^\d{6}$/, 'Använd format YYYYMM').transform(Number),
+    yearMonth: z.string().regex(/^\d{6}$/, 'Använd format YYYYMM').transform(Number).pipe(z.number().min(190001, 'Datum måste vara mellan 1900-2099').max(209912, 'Datum måste vara mellan 1900-2099')),
 });
 
 // Settings schemas

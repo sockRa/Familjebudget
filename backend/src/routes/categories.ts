@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import db from '../db.js';
-import { validate } from '../middleware/validate.js';
-import { CategorySchema } from '../db/schemas.js';
+import { validate, validateParams } from '../middleware/validate.js';
+import { CategorySchema, IdParamSchema } from '../db/schemas.js';
 
 const router = Router();
 
@@ -25,8 +25,8 @@ router.post('/', validate(CategorySchema), (req: Request, res: Response) => {
 });
 
 // Update category
-router.put('/:id', validate(CategorySchema.partial()), (req: Request, res: Response) => {
-    const id = parseInt(req.params.id);
+router.put('/:id', validateParams(IdParamSchema), validate(CategorySchema.partial()), (req: Request, res: Response) => {
+    const { id } = req.params as unknown as { id: number };
     const updates = req.body;
 
     const category = db.updateCategory(id, updates);
@@ -37,8 +37,8 @@ router.put('/:id', validate(CategorySchema.partial()), (req: Request, res: Respo
 });
 
 // Delete category
-router.delete('/:id', (req: Request, res: Response) => {
-    const id = parseInt(req.params.id);
+router.delete('/:id', validateParams(IdParamSchema), (req: Request, res: Response) => {
+    const { id } = req.params as unknown as { id: number };
     if (!db.deleteCategory(id)) {
         return res.status(404).json({ error: 'Category not found' });
     }

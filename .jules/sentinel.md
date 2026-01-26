@@ -14,3 +14,8 @@
 **Vulnerability:** Passing `year_month=invalid` to expenses API caused `parseInt` to return `NaN`. The database logic `if (!yearMonth)` treated `NaN` as "no filter", returning all records instead of an error or empty list.
 **Learning:** Relying on JavaScript's truthiness/falsiness for control flow with user input is dangerous. `NaN` is falsy but is not `undefined` or `null`.
 **Prevention:** Strictly validate input types and values using middleware (Zod) before they reach route handlers. Do not rely on manual parsing inside handlers.
+
+## 2024-05-26 - Standardized Input Validation
+**Vulnerability:** Inconsistent input validation in `categories.ts` and `overview.ts` allowed `NaN` (via manual `parseInt`) to reach database functions, and potential invalid date ranges.
+**Learning:** Manual parsing inside route handlers duplicates logic and often misses edge cases (like `NaN` checks or range validation) compared to centralized schemas.
+**Prevention:** Enforce Zod schemas for all path and query parameters using `validateParams` and `validateQuery` middleware, replacing manual parsing entirely.
