@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import db from '../db.js';
-import { calculateMonthlyOverview } from '../calculations.js';
+import { calculateMonthlyOverviewPreFiltered } from '../calculations.js';
 import type { Income, Expense } from '../types.js';
 import { validateParams } from '../middleware/validate.js';
 import { YearMonthParamSchema } from '../db/schemas.js';
@@ -14,7 +14,7 @@ router.get('/:yearMonth', validateParams(YearMonthParamSchema), (req: Request, r
   const incomes = db.getIncomes(yearMonth) as Income[];
   const expenses = db.getExpenses(yearMonth) as Expense[];
 
-  const overview = calculateMonthlyOverview(incomes, expenses, yearMonth);
+  const overview = calculateMonthlyOverviewPreFiltered(incomes, expenses, yearMonth);
   res.json(overview);
 });
 

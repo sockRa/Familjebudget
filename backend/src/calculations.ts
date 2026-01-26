@@ -179,15 +179,18 @@ export function calculateTransferToJoint(
 }
 
 /**
- * Calculate complete monthly overview
- * Optimized to iterate expenses only once
+ * Calculate complete monthly overview using pre-filtered expenses.
+ * Optimized to iterate expenses only once.
+ *
+ * @param expenses - Must be pre-filtered for the given yearMonth (including overrides handling).
+ *                   This prevents redundant O(N) filtering when data comes from DB.
  */
-export function calculateMonthlyOverview(
+export function calculateMonthlyOverviewPreFiltered(
     incomes: Income[],
     expenses: Expense[],
     yearMonth: number
 ): MonthlyOverview {
-    const relevantExpenses = getExpensesForMonth(expenses, yearMonth);
+    const relevantExpenses = expenses;
 
     const totalIncome = calculateTotalIncome(incomes);
 
