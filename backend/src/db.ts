@@ -37,14 +37,14 @@ const statements: Record<string, Statement> = {
   // Categories
   getAllCategories: db.prepare('SELECT * FROM categories ORDER BY name COLLATE NOCASE'),
   getCategoryById: db.prepare('SELECT * FROM categories WHERE id = ?'),
-  insertCategory: db.prepare('INSERT INTO categories (name, color) VALUES (?, ?)'),
+  insertCategory: db.prepare('INSERT INTO categories (name, color) VALUES (?, ?) RETURNING *'),
   deleteCategory: db.prepare('DELETE FROM categories WHERE id = ?'),
 
   // Incomes
   getAllIncomes: db.prepare('SELECT * FROM incomes ORDER BY owner, name COLLATE NOCASE'),
   getIncomesByMonth: db.prepare('SELECT * FROM incomes WHERE year_month = ? ORDER BY owner, name COLLATE NOCASE'),
   getIncomeById: db.prepare('SELECT * FROM incomes WHERE id = ?'),
-  insertIncome: db.prepare('INSERT INTO incomes (name, owner, amount, year_month) VALUES (?, ?, ?, ?)'),
+  insertIncome: db.prepare('INSERT INTO incomes (name, owner, amount, year_month) VALUES (?, ?, ?, ?) RETURNING *'),
   deleteIncome: db.prepare('DELETE FROM incomes WHERE id = ?'),
   getAllIncomesRaw: db.prepare('SELECT * FROM incomes'),
 
@@ -112,8 +112,8 @@ export function getCategoryById(id: number) {
 }
 
 export function createCategory(name: string, color: string = '#cccccc') {
-  const result = statements.insertCategory.run(name, color);
-  return { id: Number(result.lastInsertRowid), name, color };
+  // Optimization: Use RETURNING * to avoid a separate SELECT query
+  return statements.insertCategory.get(name, color);
 }
 
 export function updateCategory(id: number, updates: Partial<Record<CategoryField, any>>) {
@@ -121,7 +121,9 @@ export function updateCategory(id: number, updates: Partial<Record<CategoryField
 
   if (sql) {
     params.push(id);
-    db.prepare(`UPDATE categories SET ${sql} WHERE id = ?`).run(...params);
+    // Optimization: Use RETURNING * to avoid a separate SELECT query
+    const result = db.prepare(`UPDATE categories SET ${sql} WHERE id = ? RETURNING *`).get(...params);
+    return result;
   }
   return getCategoryById(id);
 }
@@ -144,8 +146,8 @@ export function getIncomeById(id: number) {
 }
 
 export function createIncome(name: string, owner: string, amount: number, year_month: number) {
-  const result = statements.insertIncome.run(name, owner, amount, year_month);
-  return { id: Number(result.lastInsertRowid), name, owner, amount, year_month };
+  // Optimization: Use RETURNING * to avoid a separate SELECT query
+  return statements.insertIncome.get(name, owner, amount, year_month);
 }
 
 export function updateIncome(id: number, updates: Partial<Record<IncomeField, any>>) {
@@ -153,7 +155,9 @@ export function updateIncome(id: number, updates: Partial<Record<IncomeField, an
 
   if (sql) {
     params.push(id);
-    db.prepare(`UPDATE incomes SET ${sql} WHERE id = ?`).run(...params);
+    // Optimization: Use RETURNING * to avoid a separate SELECT query
+    const result = db.prepare(`UPDATE incomes SET ${sql} WHERE id = ? RETURNING *`).get(...params);
+    return result;
   }
   return getIncomeById(id);
 }
