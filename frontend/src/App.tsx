@@ -19,6 +19,15 @@ import { PlanningPanel } from './components/PlanningPanel';
 
 type Tab = 'overview' | 'incomes' | 'categories' | 'settings' | 'statistics' | 'planning';
 
+const tabDefs: { id: Tab; label: string }[] = [
+    { id: 'overview', label: 'Översikt' },
+    { id: 'incomes', label: 'Inkomster' },
+    { id: 'planning', label: 'Planering' },
+    { id: 'statistics', label: 'Statistik' },
+    { id: 'categories', label: 'Kategorier' },
+    { id: 'settings', label: 'Inställningar' },
+];
+
 function App() {
     const [theme, setTheme] = useState<'light' | 'dark'>(() => {
         return (localStorage.getItem('theme') as 'light' | 'dark') || 'dark';
@@ -393,124 +402,123 @@ function App() {
                 </div>
             )}
 
-            <div className="tabs">
-                <button className={`tab ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')}>
-                    Översikt
-                </button>
-                <button className={`tab ${activeTab === 'incomes' ? 'active' : ''}`} onClick={() => setActiveTab('incomes')}>
-                    Inkomster
-                </button>
-                <button className={`tab ${activeTab === 'planning' ? 'active' : ''}`} onClick={() => setActiveTab('planning')}>
-                    Planering
-                </button>
-                <button className={`tab ${activeTab === 'statistics' ? 'active' : ''}`} onClick={() => setActiveTab('statistics')}>
-                    Statistik
-                </button>
-                <button className={`tab ${activeTab === 'categories' ? 'active' : ''}`} onClick={() => setActiveTab('categories')}>
-                    Kategorier
-                </button>
-                <button className={`tab ${activeTab === 'settings' ? 'active' : ''}`} onClick={() => setActiveTab('settings')}>
-                    Inställningar
-                </button>
+            <div className="tabs" role="tablist">
+                {tabDefs.map(tab => (
+                    <button
+                        key={tab.id}
+                        id={`tab-${tab.id}`}
+                        role="tab"
+                        aria-selected={activeTab === tab.id}
+                        aria-controls={`panel-${tab.id}`}
+                        className={`tab ${activeTab === tab.id ? 'active' : ''}`}
+                        onClick={() => setActiveTab(tab.id)}
+                    >
+                        {tab.label}
+                    </button>
+                ))}
             </div>
 
-            {isLoading && activeTab === 'overview' && (
-                <div className="loading-overlay">
-                    <div className="loading-spinner"></div>
-                </div>
-            )}
-
-            {activeTab === 'overview' && overview && (
-                <>
-                    <SummaryCards overview={overview} previousOverview={previousOverview} settings={settings} />
-
-                    {/* Status filter */}
-                    <div className="filter-bar">
-                        <span style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>Filter:</span>
-                        <button
-                            className={`btn btn-filter ${statusFilter === 'all' ? 'active' : ''}`}
-                            onClick={() => setStatusFilter('all')}
-                            aria-pressed={statusFilter === 'all'}
-                        >
-                            Alla
-                        </button>
-                        <button
-                            className={`btn btn-filter ${statusFilter === 'unpaid' ? 'active' : ''}`}
-                            onClick={() => setStatusFilter('unpaid')}
-                            aria-pressed={statusFilter === 'unpaid'}
-                        >
-                            ❌ Obetalda
-                        </button>
-                        <button
-                            className={`btn btn-filter ${statusFilter === 'pending' ? 'active' : ''}`}
-                            onClick={() => setStatusFilter('pending')}
-                            aria-pressed={statusFilter === 'pending'}
-                        >
-                            ⏳ Pågående
-                        </button>
-                        <button
-                            className={`btn btn-filter ${statusFilter === 'paid' ? 'active' : ''}`}
-                            onClick={() => setStatusFilter('paid')}
-                            aria-pressed={statusFilter === 'paid'}
-                        >
-                            ✅ Betalda
-                        </button>
-                    </div>
-
-                    {/* Grouped expenses list */}
-                    {expenseGroups.map(group => (
-                        <div key={group.id} className="expense-section">
-                            <button
-                                type="button"
-                                className="section-header clickable"
-                                onClick={() => toggleSection(group.id)}
-                                aria-expanded={!collapsedSections[group.id]}
-                                style={{ width: '100%', border: 'none', background: 'var(--color-bg)', textAlign: 'inherit' }}
-                            >
-                                <span className="section-title">
-                                    {collapsedSections[group.id] ? '▶' : '▼'} {group.title}
-                                </span>
-                                <span className="section-total">
-                                    {formatCurrency(group.items.reduce((s, e) => s + e.amount, 0))}
-                                </span>
-                            </button>
-                            {!collapsedSections[group.id] && (
-                                <div className="expense-list">
-                                    {group.items.map(expense => (
-                                        <ExpenseItem
-                                            key={expense.id}
-                                            expense={expense}
-                                            settings={settings}
-                                            onEdit={handleEditExpense}
-                                            onDelete={handleDeleteExpense}
-                                            onToggleStatus={handleToggleStatus}
-                                        />
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    ))}
-
-                    {expenseGroups.length === 0 && (
-                        <div className="empty-state">
-                            <div className="empty-state-icon">📝</div>
-                            <p>Inga utgifter{statusFilter !== 'all' ? ' med denna status' : ' ännu'}</p>
+            {activeTab === 'overview' && (
+                <div role="tabpanel" id="panel-overview" aria-labelledby="tab-overview">
+                    {isLoading && (
+                        <div className="loading-overlay">
+                            <div className="loading-spinner"></div>
                         </div>
                     )}
 
-                    <button
-                        className="fab"
-                        onClick={() => { setEditingExpense(null); setShowExpenseModal(true); }}
-                        title="Lägg till utgift"
-                        aria-label="Lägg till utgift"
-                    >
-                        +
-                    </button>
-                </>
+                    {overview && (
+                        <>
+                            <SummaryCards overview={overview} previousOverview={previousOverview} settings={settings} />
+
+                            {/* Status filter */}
+                            <div className="filter-bar">
+                                <span style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>Filter:</span>
+                                <button
+                                    className={`btn btn-filter ${statusFilter === 'all' ? 'active' : ''}`}
+                                    onClick={() => setStatusFilter('all')}
+                                    aria-pressed={statusFilter === 'all'}
+                                >
+                                    Alla
+                                </button>
+                                <button
+                                    className={`btn btn-filter ${statusFilter === 'unpaid' ? 'active' : ''}`}
+                                    onClick={() => setStatusFilter('unpaid')}
+                                    aria-pressed={statusFilter === 'unpaid'}
+                                >
+                                    ❌ Obetalda
+                                </button>
+                                <button
+                                    className={`btn btn-filter ${statusFilter === 'pending' ? 'active' : ''}`}
+                                    onClick={() => setStatusFilter('pending')}
+                                    aria-pressed={statusFilter === 'pending'}
+                                >
+                                    ⏳ Pågående
+                                </button>
+                                <button
+                                    className={`btn btn-filter ${statusFilter === 'paid' ? 'active' : ''}`}
+                                    onClick={() => setStatusFilter('paid')}
+                                    aria-pressed={statusFilter === 'paid'}
+                                >
+                                    ✅ Betalda
+                                </button>
+                            </div>
+
+                            {/* Grouped expenses list */}
+                            {expenseGroups.map(group => (
+                                <div key={group.id} className="expense-section">
+                                    <button
+                                        type="button"
+                                        className="section-header clickable"
+                                        onClick={() => toggleSection(group.id)}
+                                        aria-expanded={!collapsedSections[group.id]}
+                                        style={{ width: '100%', border: 'none', background: 'var(--color-bg)', textAlign: 'inherit' }}
+                                    >
+                                        <span className="section-title">
+                                            {collapsedSections[group.id] ? '▶' : '▼'} {group.title}
+                                        </span>
+                                        <span className="section-total">
+                                            {formatCurrency(group.items.reduce((s, e) => s + e.amount, 0))}
+                                        </span>
+                                    </button>
+                                    {!collapsedSections[group.id] && (
+                                        <div className="expense-list">
+                                            {group.items.map(expense => (
+                                                <ExpenseItem
+                                                    key={expense.id}
+                                                    expense={expense}
+                                                    settings={settings}
+                                                    onEdit={handleEditExpense}
+                                                    onDelete={handleDeleteExpense}
+                                                    onToggleStatus={handleToggleStatus}
+                                                />
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+
+                            {expenseGroups.length === 0 && (
+                                <div className="empty-state">
+                                    <div className="empty-state-icon">📝</div>
+                                    <p>Inga utgifter{statusFilter !== 'all' ? ' med denna status' : ' ännu'}</p>
+                                </div>
+                            )}
+
+                            <button
+                                className="fab"
+                                onClick={() => { setEditingExpense(null); setShowExpenseModal(true); }}
+                                title="Lägg till utgift"
+                                aria-label="Lägg till utgift"
+                            >
+                                +
+                            </button>
+                        </>
+                    )}
+                </div>
             )}
 
             {activeTab === 'incomes' && (
-                <div className="card">
+                <div role="tabpanel" id="panel-incomes" aria-labelledby="tab-incomes" className="card">
                     <div className="section-header">
                         <span className="section-title">Inkomster ({formatYearMonth(currentMonth)})</span>
                         <span className="section-total">
@@ -563,24 +571,32 @@ function App() {
             )}
 
             {activeTab === 'statistics' && (
-                <StatisticsPanel currentMonth={currentMonth} settings={settings} />
+                <div role="tabpanel" id="panel-statistics" aria-labelledby="tab-statistics">
+                    <StatisticsPanel currentMonth={currentMonth} settings={settings} />
+                </div>
             )}
 
             {activeTab === 'planning' && (
-                <PlanningPanel
-                    expenses={expenses}
-                    incomes={incomes}
-                    currentMonth={currentMonth}
-                    onUpdate={loadData}
-                />
+                <div role="tabpanel" id="panel-planning" aria-labelledby="tab-planning">
+                    <PlanningPanel
+                        expenses={expenses}
+                        incomes={incomes}
+                        currentMonth={currentMonth}
+                        onUpdate={loadData}
+                    />
+                </div>
             )}
 
             {activeTab === 'categories' && (
-                <CategoriesManager categories={categories} onUpdate={loadData} />
+                <div role="tabpanel" id="panel-categories" aria-labelledby="tab-categories">
+                    <CategoriesManager categories={categories} onUpdate={loadData} />
+                </div>
             )}
 
             {activeTab === 'settings' && (
-                <SettingsPanel settings={settings} onSave={handleUpdateSettings} />
+                <div role="tabpanel" id="panel-settings" aria-labelledby="tab-settings">
+                    <SettingsPanel settings={settings} onSave={handleUpdateSettings} />
+                </div>
             )}
 
             {/* Expense Modal */}
