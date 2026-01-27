@@ -9,3 +9,7 @@
 ## 2025-05-15 - Loading State Accessibility
 **Learning:** Replacing button text with a loading spinner removes its accessible name, making the button unidentifiable to screen readers (e.g., "unlabeled button").
 **Action:** Always add `aria-label="Loading..."` or similar context when replacing text content with a purely visual indicator like a spinner.
+
+## 2025-01-23 - ARIA Tabs Implementation
+**Learning:** The main navigation used simple buttons without semantic roles, confusing screen readers. Refactoring to a data-driven `tabDefs` array allowed consistent application of `role="tab"`, `aria-selected`, and `aria-controls` across all tabs.
+**Action:** Use a configuration array for navigation elements to ensure accessibility attributes are applied consistently and maintainably.
