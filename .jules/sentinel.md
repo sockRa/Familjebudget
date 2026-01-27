@@ -19,3 +19,8 @@
 **Vulnerability:** Inconsistent input validation in `categories.ts` and `overview.ts` allowed `NaN` (via manual `parseInt`) to reach database functions, and potential invalid date ranges.
 **Learning:** Manual parsing inside route handlers duplicates logic and often misses edge cases (like `NaN` checks or range validation) compared to centralized schemas.
 **Prevention:** Enforce Zod schemas for all path and query parameters using `validateParams` and `validateQuery` middleware, replacing manual parsing entirely.
+
+## 2024-05-27 - Missing HTTP Security Headers
+**Vulnerability:** The application lacked several standard security headers (`Strict-Transport-Security`, `Content-Security-Policy`, `Permissions-Policy`), leaving it open to clickjacking (partially), man-in-the-middle (downgrade attacks), and XSS (if vulnerabilities exist).
+**Learning:** Framework defaults (like Express) are often minimal. Security headers are a low-cost, high-value "defense in depth" layer that should be standard.
+**Prevention:** Implement a comprehensive security middleware that sets strict headers by default, including CSP and HSTS, even for internal/local apps.
