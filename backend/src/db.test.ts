@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
-    getCategories, createCategory, deleteCategory,
-    getIncomes, createIncome, deleteIncome,
+    getCategories, createCategory, deleteCategory, updateCategory,
+    getIncomes, createIncome, deleteIncome, updateIncome,
     getExpenses, createExpense, deleteExpense
 } from './db.js';
 import db from './db/sqlite.js';
@@ -27,6 +27,16 @@ describe('Database operations', () => {
             expect(all[0].name).toBe('Test Cat');
         });
 
+        it('should update categories', () => {
+            const cat = createCategory('Old Name', '#000000');
+            const updated = updateCategory(cat.id, { name: 'New Name', color: '#ffffff' });
+            expect(updated.name).toBe('New Name');
+            expect(updated.color).toBe('#ffffff');
+
+            const fetched = getCategories() as any[];
+            expect(fetched[0].name).toBe('New Name');
+        });
+
         it('should delete categories', () => {
             const cat = createCategory('To Delete');
             deleteCategory(Number(cat.id));
@@ -50,6 +60,9 @@ describe('Database operations', () => {
 
         it('should update and delete incomes', () => {
             const inc = createIncome('Old', 'fruga', 1000, 202312);
+            const updated = updateIncome(inc.id, { amount: 2000 });
+            expect(updated.amount).toBe(2000);
+
             deleteIncome(Number(inc.id));
             expect(getIncomes(202312)).toHaveLength(0);
         });
