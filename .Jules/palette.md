@@ -9,3 +9,7 @@
 ## 2025-05-15 - Loading State Accessibility
 **Learning:** Replacing button text with a loading spinner removes its accessible name, making the button unidentifiable to screen readers (e.g., "unlabeled button").
 **Action:** Always add `aria-label="Loading..."` or similar context when replacing text content with a purely visual indicator like a spinner.
+
+## 2025-05-22 - Async Confirmation Dialog Feedback
+**Learning:** Confirmation dialogs often trigger async operations. Closing them immediately leaves the user uncertain if the action succeeded.
+**Action:** Update `ConfirmDialog` to accept Promise-returning callbacks and show a loading state within the dialog itself, keeping it open until the promise resolves.

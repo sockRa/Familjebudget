@@ -232,7 +232,7 @@ function App() {
                 } else {
                     await expensesApi.delete(expense.id);
                 }
-                loadData();
+                await loadData();
             } catch (err) {
                 console.error('Failed to delete expense:', err);
                 setError('Kunde inte ta bort utgift.');
@@ -313,7 +313,7 @@ function App() {
             async () => {
                 try {
                     await incomesApi.delete(id);
-                    loadData();
+                    await loadData();
                 } catch (err) {
                     console.error('Failed to delete income:', err);
                     setError('Kunde inte ta bort inkomst.');
