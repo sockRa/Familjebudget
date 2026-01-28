@@ -92,8 +92,6 @@ router.get('/monthly', (req: Request, res: Response) => {
     const stats: MonthlyStats[] = months.map(yearMonth => {
         const totalIncome = incomeMap.get(yearMonth) || 0;
 
-        const monthExpenses: { amount: number; payment_method: string; category_name: string | null }[] = [];
-
         const monthOverrides = overridesByMonth.get(yearMonth) || [];
         const monthVariable = variableByMonth.get(yearMonth) || [];
 
@@ -101,48 +99,8 @@ router.get('/monthly', (req: Request, res: Response) => {
         const overriddenFixedIds = new Set<number>();
         monthOverrides.forEach(o => overriddenFixedIds.add(o.overrides_expense_id));
 
-        // Add Fixed Expenses (if not overridden)
-        for (const fixed of fixedExpenses) {
-            if (!overriddenFixedIds.has(fixed.id)) {
-                monthExpenses.push({
-                    amount: fixed.amount,
-                    payment_method: fixed.payment_method,
-                    category_name: fixed.category_id ? categoryMap.get(fixed.category_id) || null : null
-                });
-            }
-        }
-
-        // Add Overrides (if not deleted)
-        for (const ov of monthOverrides) {
-            if (ov.is_deleted !== 1) { // SQLite stores boolean as 0/1
-                monthExpenses.push({
-                    amount: ov.amount,
-                    payment_method: ov.payment_method,
-                    category_name: ov.category_id ? categoryMap.get(ov.category_id) || null : null
-                });
-            }
-        }
-
-        // Add Variable Expenses
-        for (const v of monthVariable) {
-            monthExpenses.push({
-                amount: v.amount,
-                payment_method: v.payment_method,
-                category_name: v.category_id ? categoryMap.get(v.category_id) || null : null
-            });
-        }
-
-        // Calculate totals
-        const totalExpenses = monthExpenses.reduce((sum, e) => sum + e.amount, 0);
-
-        // Group by category
+        let totalExpenses = 0;
         const byCategory: Record<string, number> = {};
-        monthExpenses.forEach(e => {
-            const cat = e.category_name || 'Okategoriserat';
-            byCategory[cat] = (byCategory[cat] || 0) + e.amount;
-        });
-
-        // Group by payment method
         const byPaymentMethod: Record<PaymentMethod, number> = {
             efaktura_jag: 0,
             efaktura_fruga: 0,
@@ -151,12 +109,41 @@ router.get('/monthly', (req: Request, res: Response) => {
             autogiro_gemensamt: 0,
             transfer: 0,
         };
-        monthExpenses.forEach(e => {
-            const method = e.payment_method as PaymentMethod;
-            if (byPaymentMethod[method] !== undefined) {
-                byPaymentMethod[method] += e.amount;
+
+        const addExpense = (amount: number, method: string, categoryId: number | null) => {
+            // Update total
+            totalExpenses += amount;
+
+            // Update category
+            const categoryName = categoryId ? categoryMap.get(categoryId) || null : null;
+            const cat = categoryName || 'Okategoriserat';
+            byCategory[cat] = (byCategory[cat] || 0) + amount;
+
+            // Update payment method
+            const pm = method as PaymentMethod;
+            if (byPaymentMethod[pm] !== undefined) {
+                byPaymentMethod[pm] += amount;
             }
-        });
+        };
+
+        // Add Fixed Expenses (if not overridden)
+        for (const fixed of fixedExpenses) {
+            if (!overriddenFixedIds.has(fixed.id)) {
+                addExpense(fixed.amount, fixed.payment_method, fixed.category_id);
+            }
+        }
+
+        // Add Overrides (if not deleted)
+        for (const ov of monthOverrides) {
+            if (ov.is_deleted !== 1) { // SQLite stores boolean as 0/1
+                addExpense(ov.amount, ov.payment_method, ov.category_id);
+            }
+        }
+
+        // Add Variable Expenses
+        for (const v of monthVariable) {
+            addExpense(v.amount, v.payment_method, v.category_id);
+        }
 
         return {
             yearMonth,
