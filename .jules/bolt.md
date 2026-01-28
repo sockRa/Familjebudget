@@ -9,3 +9,7 @@
 ## 2025-01-28 - Explicit Naming for Pre-Filtered Optimizations
 **Learning:** Optimizing by removing redundant filters can trigger "breaking change" or "safety" concerns if the function's contract isn't explicit. Reviewers worry about callers passing unfiltered data.
 **Action:** When removing internal safeguards (like filters) for performance, rename the function (e.g., `calculateMonthlyOverviewPreFiltered`) to explicitly state the input requirements in the name, preventing misuse and satisfying safety concerns.
+
+## 2025-05-22 - Test Isolation with Persistent SQLite
+**Learning:** `vitest` with `singleFork: true` and `isolate: true` reloads modules but shares the underlying filesystem. Persistent SQLite databases (file-based) are NOT reset between test files unless explicitly handled. `db.test.ts` failing after other tests confirmed that the shared DB file state persists across test files.
+**Action:** When testing with file-based SQLite, ensure `beforeEach` hooks rigorously clean the shared state (e.g., deleting all data) or use in-memory databases (`:memory:`) if possible to prevent inter-test interference.
