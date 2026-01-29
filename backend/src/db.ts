@@ -99,7 +99,22 @@ const statements: Record<string, Statement> = {
     FROM expenses
     WHERE year_month IS NOT NULL
     ORDER BY year_month DESC
-  `)
+  `),
+  getExpensesForOverview: db.prepare(`
+        SELECT amount, payment_method, payment_status, is_transfer
+        FROM expenses e
+        WHERE
+            -- Fixed expenses without an override for this month (and not an override itself)
+            (e.expense_type = 'fixed' AND e.overrides_expense_id IS NULL AND e.year_month IS NULL
+             AND (e.is_deleted IS NULL OR e.is_deleted = 0)
+             AND e.id NOT IN (SELECT overrides_expense_id FROM expenses WHERE year_month = ? AND overrides_expense_id IS NOT NULL))
+            -- Variable expenses for this month (not overrides)
+            OR (e.expense_type = 'variable' AND e.year_month = ? AND e.overrides_expense_id IS NULL
+                AND (e.is_deleted IS NULL OR e.is_deleted = 0))
+            -- Fixed overrides for this month (excluding deleted ones)
+            OR (e.expense_type = 'fixed' AND e.overrides_expense_id IS NOT NULL AND e.year_month = ? AND (e.is_deleted IS NULL OR e.is_deleted = 0))
+    `),
+  getIncomesForOverview: db.prepare('SELECT amount FROM incomes WHERE year_month = ?'),
 };
 
 // Categories
@@ -284,6 +299,14 @@ export function getExpenseMonths() {
   return rows.map(r => r.year_month);
 }
 
+export function getExpensesForOverview(yearMonth: number) {
+  return statements.getExpensesForOverview.all(yearMonth, yearMonth, yearMonth);
+}
+
+export function getIncomesForOverview(yearMonth: number) {
+  return statements.getIncomesForOverview.all(yearMonth);
+}
+
 export default {
   getCategories,
   getCategoryById,
@@ -305,4 +328,6 @@ export default {
   getAllIncomes,
   getAllExpenses,
   getExpenseMonths,
+  getExpensesForOverview,
+  getIncomesForOverview,
 };
