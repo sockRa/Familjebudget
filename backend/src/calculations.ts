@@ -10,7 +10,7 @@ export function getExpensesForMonth(expenses: Expense[], yearMonth: number): Exp
 /**
  * Calculate total income
  */
-export function calculateTotalIncome(incomes: Income[]): number {
+export function calculateTotalIncome(incomes: Pick<Income, 'amount'>[]): number {
     return incomes.reduce((sum, income) => sum + income.amount, 0);
 }
 
@@ -186,8 +186,8 @@ export function calculateTransferToJoint(
  *                   This prevents redundant O(N) filtering when data comes from DB.
  */
 export function calculateMonthlyOverviewPreFiltered(
-    incomes: Income[],
-    expenses: Expense[],
+    incomes: Pick<Income, 'amount'>[],
+    expenses: Pick<Expense, 'amount' | 'payment_method' | 'payment_status' | 'is_transfer'>[],
     yearMonth: number
 ): MonthlyOverview {
     const relevantExpenses = expenses;

@@ -11,8 +11,8 @@ const router = Router();
 router.get('/:yearMonth', validateParams(YearMonthParamSchema), (req: Request, res: Response) => {
   const { yearMonth } = req.params as unknown as { yearMonth: number };
 
-  const incomes = db.getIncomes(yearMonth) as Income[];
-  const expenses = db.getExpenses(yearMonth) as Expense[];
+  const incomes = db.getIncomesForOverview(yearMonth) as Pick<Income, 'amount'>[];
+  const expenses = db.getExpensesForOverview(yearMonth) as Pick<Expense, 'amount' | 'payment_method' | 'payment_status' | 'is_transfer'>[];
 
   const overview = calculateMonthlyOverviewPreFiltered(incomes, expenses, yearMonth);
   res.json(overview);
