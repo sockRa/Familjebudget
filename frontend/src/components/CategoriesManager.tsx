@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { Category } from '../types';
 import { categoriesApi } from '../api';
+import { ConfirmDialog } from './ConfirmDialog';
 
 interface CategoriesManagerProps {
     categories: Category[];
-    onUpdate: () => void;
+    onUpdate: () => void | Promise<void>;
 }
 
 export function CategoriesManager({
@@ -13,7 +14,7 @@ export function CategoriesManager({
 }: CategoriesManagerProps) {
     const [newName, setNewName] = useState('');
     const [isAdding, setIsAdding] = useState(false);
-    const [deletingIds, setDeletingIds] = useState<Set<number>>(new Set());
+    const [deleteCandidate, setDeleteCandidate] = useState<Category | null>(null);
 
     const handleAdd = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -23,7 +24,7 @@ export function CategoriesManager({
         try {
             await categoriesApi.create({ name: newName });
             setNewName('');
-            onUpdate();
+            await onUpdate();
         } catch (err) {
             console.error('Failed to add category:', err);
         } finally {
@@ -31,20 +32,15 @@ export function CategoriesManager({
         }
     };
 
-    const handleDelete = async (id: number) => {
-        if (!confirm('Är du säker? Utgifter med denna kategori kommer bli utan kategori.')) return;
-
-        setDeletingIds(prev => new Set(prev).add(id));
+    const performDelete = async () => {
+        if (!deleteCandidate) return;
         try {
-            await categoriesApi.delete(id);
-            onUpdate();
+            await categoriesApi.delete(deleteCandidate.id);
+            await onUpdate();
         } catch (err) {
             console.error('Failed to delete category:', err);
-            setDeletingIds(prev => {
-                const next = new Set(prev);
-                next.delete(id);
-                return next;
-            });
+        } finally {
+            setDeleteCandidate(null);
         }
     };
 
@@ -54,32 +50,19 @@ export function CategoriesManager({
                 <span className="section-title">Kategorier</span>
             </div>
             <div className="expense-list" style={{ marginBottom: 'var(--space-lg)' }}>
-                {categories.map(cat => {
-                    const isDeleting = deletingIds.has(cat.id);
-                    return (
-                        <div key={cat.id} className="expense-item" style={{ gridTemplateColumns: '1fr auto' }}>
-                            <span className="expense-name">{cat.name}</span>
-                            <button
-                                className="btn btn-icon btn-danger"
-                                onClick={() => handleDelete(cat.id)}
-                                aria-label={`Ta bort kategori ${cat.name}`}
-                                title="Ta bort kategori"
-                                disabled={isDeleting}
-                            >
-                                {isDeleting ? (
-                                    <div className="loading-spinner" style={{
-                                        width: '1em',
-                                        height: '1em',
-                                        borderWidth: '2px',
-                                        marginBottom: 0,
-                                        borderColor: 'var(--color-danger)',
-                                        borderTopColor: 'transparent'
-                                    }} />
-                                ) : '🗑️'}
-                            </button>
-                        </div>
-                    );
-                })}
+                {categories.map(cat => (
+                    <div key={cat.id} className="expense-item" style={{ gridTemplateColumns: '1fr auto' }}>
+                        <span className="expense-name">{cat.name}</span>
+                        <button
+                            className="btn btn-icon btn-danger"
+                            onClick={() => setDeleteCandidate(cat)}
+                            aria-label={`Ta bort kategori ${cat.name}`}
+                            title="Ta bort kategori"
+                        >
+                            🗑️
+                        </button>
+                    </div>
+                ))}
             </div>
             <form className="form-row" style={{ alignItems: 'flex-end' }} onSubmit={handleAdd}>
                 <div className="form-group" style={{ flex: 1 }}>
@@ -112,6 +95,15 @@ export function CategoriesManager({
                     ) : 'Lägg till'}
                 </button>
             </form>
+
+            <ConfirmDialog
+                isOpen={!!deleteCandidate}
+                title="Ta bort kategori"
+                message={`Är du säker på att du vill ta bort kategorin "${deleteCandidate?.name}"? Utgifter med denna kategori kommer bli utan kategori.`}
+                onConfirm={performDelete}
+                onCancel={() => setDeleteCandidate(null)}
+                variant="danger"
+            />
         </div>
     );
 }
