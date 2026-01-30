@@ -13,3 +13,7 @@
 ## 2025-05-22 - Async Confirmation Dialog Feedback
 **Learning:** Confirmation dialogs often trigger async operations. Closing them immediately leaves the user uncertain if the action succeeded.
 **Action:** Update `ConfirmDialog` to accept Promise-returning callbacks and show a loading state within the dialog itself, keeping it open until the promise resolves.
+
+## 2025-05-24 - Settings Form Feedback
+**Learning:** The settings form lacked semantic structure (`<form>`) and visual feedback (loading/success), making it unclear if changes were saved.
+**Action:** Wrap inputs in `<form>`, implement `htmlFor`/`id` association, and add explicit loading/success states to the submit button for all setting/configuration panels.
