@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { MonthlyOverview, formatCurrency } from '../types';
 import { TrendIndicator } from './TrendIndicator';
 
@@ -10,7 +11,8 @@ interface SummaryCardsProps {
     };
 }
 
-export function SummaryCards({ overview, previousOverview, settings }: SummaryCardsProps) {
+// Memoized to prevent re-renders when parent state (like filters/list expansion) changes
+export const SummaryCards = memo(function SummaryCards({ overview, previousOverview, settings }: SummaryCardsProps) {
     return (
         <>
             <div className="stats-grid">
@@ -121,4 +123,4 @@ export function SummaryCards({ overview, previousOverview, settings }: SummaryCa
             </div>
         </>
     );
-}
+});
