@@ -188,6 +188,8 @@ export function PlanningPanel({ expenses, incomes, currentMonth, onUpdate }: Pla
                                     checked={expense.isIncluded}
                                     onChange={() => handleToggleInclude(expense.id)}
                                     style={{ width: '20px', height: '20px', cursor: 'pointer' }}
+                                    aria-label={`Inkludera ${expense.name} i beräkningen`}
+                                    title="Inkludera/exkludera"
                                 />
                             </div>
 
@@ -211,6 +213,8 @@ export function PlanningPanel({ expenses, incomes, currentMonth, onUpdate }: Pla
                                         style={{ width: '100px', padding: '4px 8px', textAlign: 'right' }}
                                         value={expense.simulatedAmount}
                                         onChange={(e) => handleAmountChange(expense.id, parseInt(e.target.value) || 0)}
+                                        aria-label={`Simulerat belopp för ${expense.name}`}
+                                        title="Ange simulerat belopp"
                                     />
                                 ) : (
                                     <span className="expense-amount" style={{ textDecoration: 'line-through' }}>
