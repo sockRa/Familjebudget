@@ -13,3 +13,7 @@
 ## 2025-05-22 - Test Isolation with Persistent SQLite
 **Learning:** `vitest` with `singleFork: true` and `isolate: true` reloads modules but shares the underlying filesystem. Persistent SQLite databases (file-based) are NOT reset between test files unless explicitly handled. `db.test.ts` failing after other tests confirmed that the shared DB file state persists across test files.
 **Action:** When testing with file-based SQLite, ensure `beforeEach` hooks rigorously clean the shared state (e.g., deleting all data) or use in-memory databases (`:memory:`) if possible to prevent inter-test interference.
+
+## 2025-05-22 - Splitting Static and Dynamic Data Loading
+**Learning:** Fetching static data (like categories) alongside dynamic data (like monthly expenses) in a single `loadData` function causes unnecessary API calls when the dynamic parameter (month) changes.
+**Action:** Split data loading into distinct functions (`loadCategories`, `loadMonthData`) and use separate `useEffect` hooks or combined callbacks (`loadAllData`) to optimize network usage without sacrificing data consistency.

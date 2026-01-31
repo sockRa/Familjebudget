@@ -65,33 +65,46 @@ function App() {
         localStorage.setItem('theme', theme);
     }, [theme]);
 
-    // Load settings from server
-    useEffect(() => {
-        settingsApi.get()
-            .then(s => {
-                setSettings(s);
-                setSettingsLoaded(true);
-            })
-            .catch(err => {
-                console.error('Failed to load settings:', err);
-                setSettingsLoaded(true);
-            });
+    // Load settings and categories from server
+    const loadCategories = useCallback(async () => {
+        try {
+            const cats = await categoriesApi.getAll();
+            setCategories(cats);
+        } catch (err) {
+            console.error('Failed to load categories:', err);
+            // Non-critical, don't set global error
+        }
     }, []);
 
-    // Load data
-    const loadData = useCallback(async () => {
+    useEffect(() => {
+        Promise.all([
+            settingsApi.get().catch(err => {
+                console.error('Failed to load settings:', err);
+                return DEFAULT_SETTINGS;
+            }),
+            categoriesApi.getAll().catch(err => {
+                console.error('Failed to load categories:', err);
+                return [];
+            })
+        ]).then(([s, cats]) => {
+            setSettings(s);
+            setCategories(cats);
+            setSettingsLoaded(true);
+        });
+    }, []);
+
+    // Load data dependent on current month
+    const loadMonthData = useCallback(async () => {
         setError(null);
         setIsLoading(true);
         try {
             const previousMonth = addMonths(currentMonth, -1);
-            const [cats, incs, exps, ov, prevOv] = await Promise.all([
-                categoriesApi.getAll(),
+            const [incs, exps, ov, prevOv] = await Promise.all([
                 incomesApi.getAll(currentMonth),
                 expensesApi.getAll(currentMonth),
                 overviewApi.get(currentMonth),
                 overviewApi.get(previousMonth).catch(() => null), // Silently fail for previous month
             ]);
-            setCategories(cats);
             setIncomes(incs);
             setExpenses(exps);
             setOverview(ov);
@@ -108,6 +121,11 @@ function App() {
         }
     }, [currentMonth]);
 
+    const loadAllData = useCallback(() => {
+        loadCategories();
+        loadMonthData();
+    }, [loadCategories, loadMonthData]);
+
     // Keyboard navigation
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -121,8 +139,8 @@ function App() {
 
 
     useEffect(() => {
-        loadData();
-    }, [loadData]);
+        loadMonthData();
+    }, [loadMonthData]);
 
     // Helpers
     const showConfirm = useCallback((title: string, message: string, onConfirm: () => void, variant: 'danger' | 'warning' | 'info' = 'danger') => {
@@ -210,7 +228,7 @@ function App() {
             }
             setShowExpenseModal(false);
             setEditingExpense(null);
-            loadData();
+            loadMonthData();
         } catch (err) {
             console.error('Failed to save expense:', err);
             if (err instanceof ApiError) {
@@ -232,7 +250,7 @@ function App() {
                 } else {
                     await expensesApi.delete(expense.id);
                 }
-                await loadData();
+                await loadMonthData();
             } catch (err) {
                 console.error('Failed to delete expense:', err);
                 setError('Kunde inte ta bort utgift.');
@@ -256,7 +274,7 @@ function App() {
                 () => deleteAction(true)
             );
         }
-    }, [currentMonth, loadData, closeConfirm, showConfirm]);
+    }, [currentMonth, loadMonthData, closeConfirm, showConfirm]);
 
     const handleToggleStatus = useCallback(async (expense: Expense, status: PaymentStatus) => {
         // Optimistic update - update local state immediately
@@ -272,7 +290,7 @@ function App() {
                 await expensesApi.update(expense.id, { payment_status: status });
             }
             // Silently refresh in background to sync any server-side changes
-            loadData();
+            loadMonthData();
         } catch (err) {
             console.error('Failed to update status:', err);
             // Revert on error
@@ -280,7 +298,7 @@ function App() {
                 e.id === expense.id ? { ...e, payment_status: expense.payment_status } : e
             ));
         }
-    }, [currentMonth, loadData]);
+    }, [currentMonth, loadMonthData]);
 
     // Memoized to keep ExpenseItem props stable
     const handleEditExpense = useCallback((e: Expense) => {
@@ -297,7 +315,7 @@ function App() {
             }
             setShowIncomeModal(false);
             setEditingIncome(null);
-            loadData();
+            loadMonthData();
         } catch (err) {
             console.error('Failed to save income:', err);
             if (err instanceof ApiError) {
@@ -313,7 +331,7 @@ function App() {
             async () => {
                 try {
                     await incomesApi.delete(id);
-                    await loadData();
+                    await loadMonthData();
                 } catch (err) {
                     console.error('Failed to delete income:', err);
                     setError('Kunde inte ta bort inkomst.');
@@ -571,12 +589,12 @@ function App() {
                     expenses={expenses}
                     incomes={incomes}
                     currentMonth={currentMonth}
-                    onUpdate={loadData}
+                    onUpdate={loadMonthData}
                 />
             )}
 
             {activeTab === 'categories' && (
-                <CategoriesManager categories={categories} onUpdate={loadData} />
+                <CategoriesManager categories={categories} onUpdate={loadAllData} />
             )}
 
             {activeTab === 'settings' && (
@@ -592,7 +610,7 @@ function App() {
                     currentMonth={currentMonth}
                     onSave={handleSaveExpense}
                     onClose={() => { setShowExpenseModal(false); setEditingExpense(null); }}
-                    onCategoryCreated={loadData}
+                    onCategoryCreated={loadCategories}
                 />
             )}
 
