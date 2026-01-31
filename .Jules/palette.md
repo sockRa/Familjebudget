@@ -17,3 +17,7 @@
 ## 2025-05-24 - Settings Form Feedback
 **Learning:** The settings form lacked semantic structure (`<form>`) and visual feedback (loading/success), making it unclear if changes were saved.
 **Action:** Wrap inputs in `<form>`, implement `htmlFor`/`id` association, and add explicit loading/success states to the submit button for all setting/configuration panels.
+
+## 2025-05-25 - Implicit Labels in Tables/Lists
+**Learning:** Inputs inside list items (like checkboxes or amount fields) often lack visible labels for design reasons, making them inaccessible to screen readers who just hear "checkbox" or "edit text".
+**Action:** Use `aria-label` constructed from the row's context (e.g., "Amount for [Item Name]") to provide invisible but accessible names for these inputs.
