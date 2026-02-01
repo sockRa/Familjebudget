@@ -5,6 +5,7 @@ import {
     getOwnerLabel, DEFAULT_SETTINGS
 } from './types';
 import { categoriesApi, incomesApi, expensesApi, overviewApi, settingsApi, ApiError } from './api';
+import { calculateMonthlyOverviewPreFiltered } from './shared/calculations';
 
 // Components
 import { SummaryCards } from './components/SummaryCards';
@@ -99,15 +100,14 @@ function App() {
         setIsLoading(true);
         try {
             const previousMonth = addMonths(currentMonth, -1);
-            const [incs, exps, ov, prevOv] = await Promise.all([
+            const [incs, exps, prevOv] = await Promise.all([
                 incomesApi.getAll(currentMonth),
                 expensesApi.getAll(currentMonth),
-                overviewApi.get(currentMonth),
                 overviewApi.get(previousMonth).catch(() => null), // Silently fail for previous month
             ]);
             setIncomes(incs);
             setExpenses(exps);
-            setOverview(ov);
+            setOverview(calculateMonthlyOverviewPreFiltered(incs, exps, currentMonth));
             setPreviousOverview(prevOv);
         } catch (err) {
             console.error('Failed to load data:', err);
