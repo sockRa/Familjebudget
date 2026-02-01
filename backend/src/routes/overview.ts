@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import db from '../db.js';
-import { calculateMonthlyOverviewPreFiltered } from '../calculations.js';
+import { calculateMonthlyOverviewPreFiltered } from '../shared/calculations.js';
 import type { Income, Expense } from '../types.js';
 import { validateParams } from '../middleware/validate.js';
 import { YearMonthParamSchema } from '../db/schemas.js';

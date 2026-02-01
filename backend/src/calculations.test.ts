@@ -7,7 +7,7 @@ import {
     calculateMonthlyOverviewPreFiltered,
     calculateExpensesByPerson,
     getExpensesForMonth,
-} from './calculations.js';
+} from '../shared/calculations.js';
 import type { Income, Expense } from './types.js';
 
 const mockIncomes: Income[] = [
