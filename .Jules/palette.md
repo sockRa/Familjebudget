@@ -21,3 +21,7 @@
 ## 2025-05-25 - Implicit Labels in Tables/Lists
 **Learning:** Inputs inside list items (like checkboxes or amount fields) often lack visible labels for design reasons, making them inaccessible to screen readers who just hear "checkbox" or "edit text".
 **Action:** Use `aria-label` constructed from the row's context (e.g., "Amount for [Item Name]") to provide invisible but accessible names for these inputs.
+
+## 2025-05-26 - Semantic Modals
+**Learning:** Visual modals (divs) without semantic roles (`role="dialog"`) and labels are invisible to screen readers as distinct navigation contexts, often causing focus to get lost in the background.
+**Action:** Always decorate modal containers with `role="dialog"` (or `alertdialog`), `aria-modal="true"`, and explicitly link titles/descriptions via `aria-labelledby`/`aria-describedby` IDs.

@@ -113,13 +113,17 @@ export function ConfirmDialog({
         <div className="confirm-backdrop" onClick={!loadingButton ? onCancel : undefined}>
             <div
                 className="confirm-dialog"
+                role="alertdialog"
+                aria-modal="true"
+                aria-labelledby="confirm-dialog-title"
+                aria-describedby="confirm-dialog-message"
                 onClick={e => e.stopPropagation()}
                 ref={dialogRef}
                 tabIndex={-1}
             >
-                <div className="confirm-icon">{icon}</div>
-                <h3 className="confirm-title">{title}</h3>
-                <p className="confirm-message">{message}</p>
+                <div className="confirm-icon" aria-hidden="true">{icon}</div>
+                <h3 id="confirm-dialog-title" className="confirm-title">{title}</h3>
+                <p id="confirm-dialog-message" className="confirm-message">{message}</p>
                 <div className="confirm-actions" style={{ flexWrap: 'wrap', gap: 'var(--space-sm)' }}>
                     <button
                         className="btn btn-secondary"
