@@ -82,6 +82,8 @@ export function CategoriesManager({
                     className="btn btn-primary"
                     style={{ height: 38, minWidth: 100 }}
                     disabled={isAdding || !newName.trim()}
+                    aria-label={isAdding ? 'Lägger till kategori...' : undefined}
+                    aria-busy={isAdding}
                 >
                     {isAdding ? (
                         <div className="loading-spinner" style={{

@@ -137,6 +137,8 @@ export function ConfirmDialog({
                             className="btn btn-secondary"
                             onClick={handleSecondaryConfirm}
                             disabled={!!loadingButton}
+                            aria-label={loadingButton === 'secondary' ? `${secondaryConfirmText} (bearbetar)` : undefined}
+                            aria-busy={loadingButton === 'secondary'}
                         >
                             {loadingButton === 'secondary' ? <Spinner color="var(--color-text)" /> : secondaryConfirmText}
                         </button>
@@ -146,6 +148,8 @@ export function ConfirmDialog({
                         onClick={handleConfirm}
                         disabled={!!loadingButton}
                         style={{ minWidth: '100px' }} // Ensure min-width prevents layout shift
+                        aria-label={loadingButton === 'confirm' ? `${confirmText} (bearbetar)` : undefined}
+                        aria-busy={loadingButton === 'confirm'}
                     >
                         {loadingButton === 'confirm' ? <Spinner /> : confirmText}
                     </button>

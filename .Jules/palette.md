@@ -25,3 +25,7 @@
 ## 2025-05-26 - Semantic Modals
 **Learning:** Visual modals (divs) without semantic roles (`role="dialog"`) and labels are invisible to screen readers as distinct navigation contexts, often causing focus to get lost in the background.
 **Action:** Always decorate modal containers with `role="dialog"` (or `alertdialog`), `aria-modal="true"`, and explicitly link titles/descriptions via `aria-labelledby`/`aria-describedby` IDs.
+
+## 2025-05-27 - Semantic Loading States
+**Learning:** While `aria-label` fixes the missing name, `aria-busy="true"` provides additional semantic context to assistive technologies that the element is currently processing and might change.
+**Action:** Combined `aria-label` (for name) with `aria-busy="true"` (for state) on all loading buttons.
