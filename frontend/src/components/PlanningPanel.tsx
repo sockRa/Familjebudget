@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import { Expense, Income, formatCurrency } from '../types';
 import { expensesApi } from '../api';
 
@@ -14,6 +14,68 @@ interface SimulatedExpense extends Expense {
     isIncluded: boolean;
     isModified: boolean;
 }
+
+interface PlanningItemProps {
+    expense: SimulatedExpense;
+    onToggleInclude: (id: number) => void;
+    onAmountChange: (id: number, amount: number) => void;
+}
+
+// Memoized item component to prevent re-renders of the entire list when one item changes
+const PlanningItem = memo(({ expense, onToggleInclude, onAmountChange }: PlanningItemProps) => {
+    return (
+        <div
+            className={`expense-item ${!expense.isIncluded ? 'excluded' : ''}`}
+            style={{
+                opacity: expense.isIncluded ? 1 : 0.5,
+                borderLeft: expense.isModified ? '4px solid var(--color-warning)' : '1px solid var(--color-border)'
+            }}
+        >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
+                <input
+                    type="checkbox"
+                    checked={expense.isIncluded}
+                    onChange={() => onToggleInclude(expense.id)}
+                    style={{ width: '20px', height: '20px', cursor: 'pointer' }}
+                    aria-label={`Inkludera ${expense.name} i beräkningen`}
+                    title="Inkludera/exkludera"
+                />
+            </div>
+
+            <div className="expense-info">
+                <div className="expense-meta">
+                    <span className="expense-name">{expense.name}</span>
+                    <span className="expense-category" style={{ backgroundColor: 'var(--color-bg-tertiary)' }}>
+                        {expense.category_name || 'Okategoriserad'}
+                    </span>
+                    {expense.expense_type === 'fixed' && (
+                        <span className="payment-chip" style={{ fontSize: '10px' }}>FAST</span>
+                    )}
+                </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
+                {expense.isIncluded ? (
+                    <input
+                        type="number"
+                        className="form-input"
+                        style={{ width: '100px', padding: '4px 8px', textAlign: 'right' }}
+                        value={expense.simulatedAmount}
+                        onChange={(e) => onAmountChange(expense.id, parseInt(e.target.value) || 0)}
+                        aria-label={`Simulerat belopp för ${expense.name}`}
+                        title="Ange simulerat belopp"
+                    />
+                ) : (
+                    <span className="expense-amount" style={{ textDecoration: 'line-through' }}>
+                        {formatCurrency(expense.amount)}
+                    </span>
+                )}
+            </div>
+        </div>
+    );
+});
+
+PlanningItem.displayName = 'PlanningItem';
 
 export function PlanningPanel({ expenses, incomes, currentMonth, onUpdate }: PlanningPanelProps) {
     const [simulatedExpenses, setSimulatedExpenses] = useState<SimulatedExpense[]>([]);
@@ -49,7 +111,7 @@ export function PlanningPanel({ expenses, incomes, currentMonth, onUpdate }: Pla
     const originalBalance = totalIncome - originalTotalExpenses;
     const simulatedBalance = totalIncome - simulatedTotalExpenses;
 
-    const handleAmountChange = (id: number, amount: number) => {
+    const handleAmountChange = useCallback((id: number, amount: number) => {
         setSimulatedExpenses(prev => prev.map(e => {
             if (e.id !== id) return e;
             const original = expenses.find(exp => exp.id === id);
@@ -59,9 +121,9 @@ export function PlanningPanel({ expenses, incomes, currentMonth, onUpdate }: Pla
                 isModified: amount !== original?.amount || !e.isIncluded // simplistic modified check
             };
         }));
-    };
+    }, [expenses]);
 
-    const handleToggleInclude = (id: number) => {
+    const handleToggleInclude = useCallback((id: number) => {
         setSimulatedExpenses(prev => prev.map(e => {
             if (e.id !== id) return e;
             return {
@@ -70,7 +132,7 @@ export function PlanningPanel({ expenses, incomes, currentMonth, onUpdate }: Pla
                 isModified: true
             };
         }));
-    };
+    }, []);
 
     const handleSave = async () => {
         setIsSaving(true);
@@ -174,55 +236,12 @@ export function PlanningPanel({ expenses, incomes, currentMonth, onUpdate }: Pla
 
                 <div className="expense-list">
                     {simulatedExpenses.map(expense => (
-                        <div
+                        <PlanningItem
                             key={expense.id}
-                            className={`expense-item ${!expense.isIncluded ? 'excluded' : ''}`}
-                            style={{
-                                opacity: expense.isIncluded ? 1 : 0.5,
-                                borderLeft: expense.isModified ? '4px solid var(--color-warning)' : '1px solid var(--color-border)'
-                            }}
-                        >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
-                                <input
-                                    type="checkbox"
-                                    checked={expense.isIncluded}
-                                    onChange={() => handleToggleInclude(expense.id)}
-                                    style={{ width: '20px', height: '20px', cursor: 'pointer' }}
-                                    aria-label={`Inkludera ${expense.name} i beräkningen`}
-                                    title="Inkludera/exkludera"
-                                />
-                            </div>
-
-                            <div className="expense-info">
-                                <div className="expense-meta">
-                                    <span className="expense-name">{expense.name}</span>
-                                    <span className="expense-category" style={{ backgroundColor: 'var(--color-bg-tertiary)' }}>
-                                        {expense.category_name || 'Okategoriserad'}
-                                    </span>
-                                    {expense.expense_type === 'fixed' && (
-                                        <span className="payment-chip" style={{ fontSize: '10px' }}>FAST</span>
-                                    )}
-                                </div>
-                            </div>
-
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
-                                {expense.isIncluded ? (
-                                    <input
-                                        type="number"
-                                        className="form-input"
-                                        style={{ width: '100px', padding: '4px 8px', textAlign: 'right' }}
-                                        value={expense.simulatedAmount}
-                                        onChange={(e) => handleAmountChange(expense.id, parseInt(e.target.value) || 0)}
-                                        aria-label={`Simulerat belopp för ${expense.name}`}
-                                        title="Ange simulerat belopp"
-                                    />
-                                ) : (
-                                    <span className="expense-amount" style={{ textDecoration: 'line-through' }}>
-                                        {formatCurrency(expense.amount)}
-                                    </span>
-                                )}
-                            </div>
-                        </div>
+                            expense={expense}
+                            onToggleInclude={handleToggleInclude}
+                            onAmountChange={handleAmountChange}
+                        />
                     ))}
                 </div>
             </div>

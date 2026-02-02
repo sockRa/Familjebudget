@@ -17,3 +17,7 @@
 ## 2025-05-22 - Splitting Static and Dynamic Data Loading
 **Learning:** Fetching static data (like categories) alongside dynamic data (like monthly expenses) in a single `loadData` function causes unnecessary API calls when the dynamic parameter (month) changes.
 **Action:** Split data loading into distinct functions (`loadCategories`, `loadMonthData`) and use separate `useEffect` hooks or combined callbacks (`loadAllData`) to optimize network usage without sacrificing data consistency.
+
+## 2025-05-22 - PNPM Build Scripts Blocking
+**Learning:** pnpm v10+ blocks build scripts by default. In CI/Sandbox environments, this prevents native modules (like better-sqlite3) from building unless explicitly allowed via `pnpm approve-builds` or `pnpm.onlyBuiltDependencies` in `package.json`.
+**Action:** When working with native modules in pnpm projects, check if build scripts are blocked. Use `--config.ignore-scripts=false` or modify `package.json` temporarily to build, but be careful not to commit environment configs if prohibited.
