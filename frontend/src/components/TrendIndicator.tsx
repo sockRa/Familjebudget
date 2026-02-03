@@ -20,11 +20,20 @@ export function TrendIndicator({ current, previous, label, lowerIsBetter = false
     // Determine if this change is "good" or "bad"
     const isGood = lowerIsBetter ? !isPositive : isPositive;
 
+    // Construct accessible label
+    const trendText = isPositive ? 'ökade' : 'minskade';
+    const accessibleLabel = `${label || 'Trend'}: ${trendText} med ${Math.abs(percentChange).toFixed(0)}% från ${formatCurrency(previous)} till ${formatCurrency(current)}`;
+
     // Skip tiny changes
     if (Math.abs(percentChange) < 0.5) {
         return (
-            <span className="trend-indicator neutral" title={label}>
-                → 0%
+            <span
+                className="trend-indicator neutral"
+                title={`${label ? label + '\n' : ''}Oförändrat (${formatCurrency(previous)} → ${formatCurrency(current)})`}
+                aria-label={`${label || 'Trend'}: Oförändrat (0%)`}
+                role="img"
+            >
+                <span aria-hidden="true">→ 0%</span>
             </span>
         );
     }
@@ -32,9 +41,13 @@ export function TrendIndicator({ current, previous, label, lowerIsBetter = false
     return (
         <span
             className={`trend-indicator ${isGood ? 'positive' : 'negative'}`}
-            title={`${label ? label + ': ' : ''}${formatCurrency(previous)} → ${formatCurrency(current)}`}
+            title={`${label ? label + '\n' : ''}${formatCurrency(previous)} → ${formatCurrency(current)} (${isPositive ? '+' : ''}${Math.abs(percentChange).toFixed(0)}%)`}
+            aria-label={accessibleLabel}
+            role="img"
         >
-            {isPositive ? '↑' : '↓'} {Math.abs(percentChange).toFixed(0)}%
+            <span aria-hidden="true">
+                {isPositive ? '↑' : '↓'} {Math.abs(percentChange).toFixed(0)}%
+            </span>
         </span>
     );
 }
@@ -64,7 +77,7 @@ export function TrendComparison({ currentMonth, previousMonth }: TrendComparison
                 <TrendIndicator
                     current={currentMonth.totalExpenses}
                     previous={previousMonth.totalExpenses}
-                    label="Jämfört med förra månaden"
+                    label="Utgifter"
                     lowerIsBetter={true}
                 />
             </div>
@@ -73,7 +86,7 @@ export function TrendComparison({ currentMonth, previousMonth }: TrendComparison
                 <TrendIndicator
                     current={currentMonth.totalIncome}
                     previous={previousMonth.totalIncome}
-                    label="Jämfört med förra månaden"
+                    label="Inkomster"
                     lowerIsBetter={false}
                 />
             </div>
@@ -82,7 +95,7 @@ export function TrendComparison({ currentMonth, previousMonth }: TrendComparison
                 <TrendIndicator
                     current={currentMonth.balance}
                     previous={previousMonth.balance}
-                    label="Jämfört med förra månaden"
+                    label="Balans"
                     lowerIsBetter={false}
                 />
             </div>

@@ -29,3 +29,7 @@
 ## 2025-05-27 - Semantic Loading States
 **Learning:** While `aria-label` fixes the missing name, `aria-busy="true"` provides additional semantic context to assistive technologies that the element is currently processing and might change.
 **Action:** Combined `aria-label` (for name) with `aria-busy="true"` (for state) on all loading buttons.
+
+## 2026-02-03 - Accessible Trend Indicators
+**Learning:** Visual indicators like "↑ 5%" are meaningless to screen readers without context. A constructed sentence (e.g., "Income increased by 5% from X to Y") provides necessary clarity.
+**Action:** Use `role="img"` with a descriptive `aria-label` for all data visualization components, and hide internal visual elements with `aria-hidden="true"`.
