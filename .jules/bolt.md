@@ -21,3 +21,7 @@
 ## 2025-05-22 - PNPM Build Scripts Blocking
 **Learning:** pnpm v10+ blocks build scripts by default. In CI/Sandbox environments, this prevents native modules (like better-sqlite3) from building unless explicitly allowed via `pnpm approve-builds` or `pnpm.onlyBuiltDependencies` in `package.json`.
 **Action:** When working with native modules in pnpm projects, check if build scripts are blocked. Use `--config.ignore-scripts=false` or modify `package.json` temporarily to build, but be careful not to commit environment configs if prohibited.
+
+## 2025-05-22 - Optimizing INSERTs with RETURNING
+**Learning:** `better-sqlite3` supports `RETURNING *` via `.get()` which avoids a separate `SELECT` query after `INSERT/UPDATE`. This saves a DB roundtrip. However, `RETURNING *` only returns columns from the modified table, unlike a subsequent `SELECT ... JOIN` which can return enriched data (like `category_name`).
+**Action:** Use `RETURNING *` for write operations where the enriched data (joins) is not immediately required by the caller, or can be fetched separately if needed. Update tests that expect joined fields on write responses.
