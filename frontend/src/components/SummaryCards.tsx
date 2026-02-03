@@ -24,6 +24,7 @@ export const SummaryCards = memo(function SummaryCards({ overview, previousOverv
                             <TrendIndicator
                                 current={overview.totalIncome}
                                 previous={previousOverview.totalIncome}
+                                label="Inkomster"
                                 lowerIsBetter={false}
                             />
                         )}
@@ -37,6 +38,7 @@ export const SummaryCards = memo(function SummaryCards({ overview, previousOverv
                             <TrendIndicator
                                 current={overview.totalExpenses}
                                 previous={previousOverview.totalExpenses}
+                                label="Utgifter"
                                 lowerIsBetter={true}
                             />
                         )}
@@ -50,6 +52,7 @@ export const SummaryCards = memo(function SummaryCards({ overview, previousOverv
                             <TrendIndicator
                                 current={overview.balance}
                                 previous={previousOverview.balance}
+                                label="Balans"
                                 lowerIsBetter={false}
                             />
                         )}
@@ -63,6 +66,7 @@ export const SummaryCards = memo(function SummaryCards({ overview, previousOverv
                             <TrendIndicator
                                 current={overview.unbudgeted}
                                 previous={previousOverview.unbudgeted}
+                                label="Obudgeterat"
                                 lowerIsBetter={false}
                             />
                         )}
