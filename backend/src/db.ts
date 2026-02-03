@@ -78,6 +78,7 @@ const statements: Record<string, Statement> = {
   insertExpense: db.prepare(`
         INSERT INTO expenses (name, amount, category_id, expense_type, payment_method, payment_status, year_month, is_transfer, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        RETURNING *
     `),
   deleteExpense: db.prepare('DELETE FROM expenses WHERE id = ?'),
   findOverride: db.prepare(`
@@ -87,10 +88,12 @@ const statements: Record<string, Statement> = {
   insertOverride: db.prepare(`
         INSERT INTO expenses (name, amount, category_id, expense_type, payment_method, payment_status, year_month, overrides_expense_id, is_transfer, created_at)
         VALUES (?, ?, ?, 'fixed', ?, ?, ?, ?, ?, ?)
+        RETURNING *
     `),
   insertDeletedOverride: db.prepare(`
         INSERT INTO expenses (name, amount, category_id, expense_type, payment_method, payment_status, year_month, overrides_expense_id, is_deleted, created_at)
         VALUES (?, ?, ?, 'fixed', ?, ?, ?, ?, 1, ?)
+        RETURNING *
     `),
   updateOverrideDeleted: db.prepare('UPDATE expenses SET is_deleted = 1 WHERE id = ?'),
   getAllExpensesRaw: db.prepare('SELECT * FROM expenses'),
@@ -197,7 +200,8 @@ export function getExpenseById(id: number) {
 const capitalizedName = (name: string) => name.charAt(0).toUpperCase() + name.slice(1);
 
 export function createExpense(data: any) {
-  const result = statements.insertExpense.run(
+  // Optimization: Use RETURNING * to avoid a separate SELECT query
+  return statements.insertExpense.get(
     capitalizedName(data.name),
     data.amount,
     data.category_id ?? null,
@@ -208,8 +212,6 @@ export function createExpense(data: any) {
     data.is_transfer ? 1 : 0,
     new Date().toISOString()
   );
-
-  return getExpenseById(Number(result.lastInsertRowid));
 }
 
 export function updateExpense(id: number, updates: Partial<Record<ExpenseField, any>>) {
@@ -217,7 +219,8 @@ export function updateExpense(id: number, updates: Partial<Record<ExpenseField, 
 
   if (sql) {
     params.push(id);
-    db.prepare(`UPDATE expenses SET ${sql} WHERE id = ?`).run(...params);
+    // Optimization: Use RETURNING *
+    return db.prepare(`UPDATE expenses SET ${sql} WHERE id = ? RETURNING *`).get(...params);
   }
 
   return getExpenseById(id);
@@ -245,7 +248,8 @@ export function createExpenseOverride(originalExpenseId: number, yearMonth: numb
   const finalPaymentMethod = overrideData.payment_method || original.payment_method;
   const finalPaymentStatus = overrideData.payment_status || original.payment_status || 'unpaid';
 
-  const result = statements.insertOverride.run(
+  // Optimization: Use RETURNING *
+  return statements.insertOverride.get(
     capitalizedName(finalName),
     finalAmount,
     finalCategoryId,
@@ -256,8 +260,6 @@ export function createExpenseOverride(originalExpenseId: number, yearMonth: numb
     overrideData.is_transfer !== undefined ? (overrideData.is_transfer ? 1 : 0) : (original.is_transfer ? 1 : 0),
     new Date().toISOString()
   );
-
-  return getExpenseById(Number(result.lastInsertRowid));
 }
 
 export function createDeletedOverride(originalExpenseId: number, yearMonth: number) {
@@ -271,7 +273,8 @@ export function createDeletedOverride(originalExpenseId: number, yearMonth: numb
   const original = getExpenseById(originalExpenseId) as any;
   if (!original) throw new Error('Original expense not found');
 
-  const result = statements.insertDeletedOverride.run(
+  // Optimization: Use RETURNING *
+  return statements.insertDeletedOverride.get(
     original.name,
     original.amount,
     original.category_id,
@@ -281,8 +284,6 @@ export function createDeletedOverride(originalExpenseId: number, yearMonth: numb
     originalExpenseId,
     new Date().toISOString()
   );
-
-  return getExpenseById(Number(result.lastInsertRowid));
 }
 
 // For calculations

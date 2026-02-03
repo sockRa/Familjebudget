@@ -81,11 +81,13 @@ describe('Database operations', () => {
             });
 
             expect((exp as any).name).toBe('Grocery');
-            expect((exp as any).category_name).toBe('Food');
+            // Optimization: createExpense no longer returns joined fields like category_name
+            expect((exp as any).category_name).toBeUndefined();
 
             const all = getExpenses(202310) as any[];
             expect(all).toHaveLength(1);
             expect(all[0].name).toBe('Grocery');
+            expect(all[0].category_name).toBe('Food');
         });
     });
 });
