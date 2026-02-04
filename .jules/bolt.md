@@ -25,3 +25,7 @@
 ## 2025-05-22 - Optimizing INSERTs with RETURNING
 **Learning:** `better-sqlite3` supports `RETURNING *` via `.get()` which avoids a separate `SELECT` query after `INSERT/UPDATE`. This saves a DB roundtrip. However, `RETURNING *` only returns columns from the modified table, unlike a subsequent `SELECT ... JOIN` which can return enriched data (like `category_name`).
 **Action:** Use `RETURNING *` for write operations where the enriched data (joins) is not immediately required by the caller, or can be fetched separately if needed. Update tests that expect joined fields on write responses.
+
+## 2025-05-22 - Removing Redundant DB Sorting
+**Learning:** The database query for expenses included a complex `ORDER BY` clause that was completely ignored by the frontend, which implements its own custom grouping and sorting. Removing this clause saves DB resources without affecting the UI.
+**Action:** Check if API consumers actually use the server-side sort order before optimizing complex queries. If the frontend re-sorts, remove the DB sort.

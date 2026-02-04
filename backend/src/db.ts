@@ -53,7 +53,6 @@ const statements: Record<string, Statement> = {
             SELECT e.*, c.name as category_name
             FROM expenses e
             LEFT JOIN categories c ON e.category_id = c.id
-            ORDER BY e.expense_type = 'fixed' DESC, e.payment_method, e.name COLLATE NOCASE
         `),
   getExpensesByMonth: db.prepare(`
         SELECT e.*, c.name as category_name
@@ -67,7 +66,6 @@ const statements: Record<string, Statement> = {
             OR (e.expense_type = 'variable' AND e.year_month = ? AND e.overrides_expense_id IS NULL)
             -- Fixed overrides for this month (excluding deleted ones)
             OR (e.expense_type = 'fixed' AND e.overrides_expense_id IS NOT NULL AND e.year_month = ? AND (e.is_deleted IS NULL OR e.is_deleted = 0))
-        ORDER BY e.expense_type = 'fixed' DESC, e.payment_method, e.name COLLATE NOCASE
     `),
   getExpenseById: db.prepare(`
         SELECT e.*, c.name as category_name
