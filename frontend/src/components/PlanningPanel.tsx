@@ -229,8 +229,24 @@ export function PlanningPanel({ expenses, incomes, currentMonth, onUpdate }: Pla
                         className="btn btn-primary"
                         onClick={handleSave}
                         disabled={isSaving || !simulatedExpenses.some(e => e.isModified)}
+                        aria-label={isSaving ? "Spara ändringar (bearbetar)" : undefined}
+                        aria-busy={isSaving}
+                        style={{ minWidth: '160px' }}
                     >
-                        {isSaving ? 'Sparar...' : 'Spara ändringar'}
+                        {isSaving ? (
+                            <>
+                                <div className="loading-spinner" style={{
+                                    width: '1em',
+                                    height: '1em',
+                                    borderWidth: '2px',
+                                    marginBottom: 0,
+                                    borderColor: 'white',
+                                    borderTopColor: 'transparent',
+                                    display: 'inline-block'
+                                }} />
+                                Sparar...
+                            </>
+                        ) : 'Spara ändringar'}
                     </button>
                 </div>
 
