@@ -33,3 +33,7 @@
 ## 2026-02-03 - Accessible Trend Indicators
 **Learning:** Visual indicators like "↑ 5%" are meaningless to screen readers without context. A constructed sentence (e.g., "Income increased by 5% from X to Y") provides necessary clarity.
 **Action:** Use `role="img"` with a descriptive `aria-label` for all data visualization components, and hide internal visual elements with `aria-hidden="true"`.
+
+## 2026-02-15 - Button Loading States
+**Learning:** Replacing button text entirely with a spinner causes layout shifts (shrinking) and bad UX.
+**Action:** Retain button text alongside the spinner (e.g., `<Spinner /> Saving...`) and enforce a `min-width` on the button to maintain layout stability.
