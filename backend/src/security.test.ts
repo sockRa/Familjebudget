@@ -9,6 +9,9 @@ describe('Security Middleware', () => {
         expect(res.headers['x-frame-options']).toBe('SAMEORIGIN');
         expect(res.headers['x-content-type-options']).toBe('nosniff');
         expect(res.headers['referrer-policy']).toBe('strict-origin-when-cross-origin');
+        expect(res.headers['strict-transport-security']).toBe('max-age=31536000; includeSubDomains');
+        expect(res.headers['content-security-policy']).toContain("default-src 'self'");
+        expect(res.headers['permissions-policy']).toBe('camera=(), microphone=(), geolocation=()');
     });
 
     it('should remove sensitive headers', async () => {
