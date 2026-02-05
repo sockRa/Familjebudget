@@ -432,9 +432,10 @@ function App() {
                 </button>
             </div>
 
-            {isLoading && activeTab === 'overview' && (
-                <div className="loading-overlay">
-                    <div className="loading-spinner"></div>
+            {isLoading && ['overview', 'incomes', 'planning'].includes(activeTab) && (
+                <div className="loading-overlay" role="status" aria-live="polite">
+                    <div className="loading-spinner" aria-hidden="true"></div>
+                    <span style={{ marginLeft: 'var(--space-sm)', color: 'var(--color-text-muted)' }}>Laddar...</span>
                 </div>
             )}
 
