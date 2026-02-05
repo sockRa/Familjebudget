@@ -56,16 +56,25 @@ const statements: Record<string, Statement> = {
         `),
   getExpensesByMonth: db.prepare(`
         SELECT e.*, c.name as category_name
-        FROM expenses e
+        FROM (
+            -- Fixed expenses without an override for this month
+            SELECT * FROM expenses
+            WHERE expense_type = 'fixed' AND overrides_expense_id IS NULL AND year_month IS NULL
+            AND id NOT IN (SELECT overrides_expense_id FROM expenses WHERE year_month = ? AND overrides_expense_id IS NOT NULL)
+
+            UNION ALL
+
+            -- Variable expenses for this month
+            SELECT * FROM expenses
+            WHERE expense_type = 'variable' AND year_month = ? AND overrides_expense_id IS NULL
+
+            UNION ALL
+
+            -- Fixed overrides for this month
+            SELECT * FROM expenses
+            WHERE expense_type = 'fixed' AND overrides_expense_id IS NOT NULL AND year_month = ? AND (is_deleted IS NULL OR is_deleted = 0)
+        ) e
         LEFT JOIN categories c ON e.category_id = c.id
-        WHERE
-            -- Fixed expenses without an override for this month (and not an override itself)
-            (e.expense_type = 'fixed' AND e.overrides_expense_id IS NULL AND e.year_month IS NULL
-             AND e.id NOT IN (SELECT overrides_expense_id FROM expenses WHERE year_month = ? AND overrides_expense_id IS NOT NULL))
-            -- Variable expenses for this month (not overrides)
-            OR (e.expense_type = 'variable' AND e.year_month = ? AND e.overrides_expense_id IS NULL)
-            -- Fixed overrides for this month (excluding deleted ones)
-            OR (e.expense_type = 'fixed' AND e.overrides_expense_id IS NOT NULL AND e.year_month = ? AND (e.is_deleted IS NULL OR e.is_deleted = 0))
     `),
   getExpenseById: db.prepare(`
         SELECT e.*, c.name as category_name
@@ -103,17 +112,26 @@ const statements: Record<string, Statement> = {
   `),
   getExpensesForOverview: db.prepare(`
         SELECT amount, payment_method, payment_status, is_transfer
-        FROM expenses e
-        WHERE
-            -- Fixed expenses without an override for this month (and not an override itself)
-            (e.expense_type = 'fixed' AND e.overrides_expense_id IS NULL AND e.year_month IS NULL
-             AND (e.is_deleted IS NULL OR e.is_deleted = 0)
-             AND e.id NOT IN (SELECT overrides_expense_id FROM expenses WHERE year_month = ? AND overrides_expense_id IS NOT NULL))
-            -- Variable expenses for this month (not overrides)
-            OR (e.expense_type = 'variable' AND e.year_month = ? AND e.overrides_expense_id IS NULL
-                AND (e.is_deleted IS NULL OR e.is_deleted = 0))
-            -- Fixed overrides for this month (excluding deleted ones)
-            OR (e.expense_type = 'fixed' AND e.overrides_expense_id IS NOT NULL AND e.year_month = ? AND (e.is_deleted IS NULL OR e.is_deleted = 0))
+        FROM (
+            -- Fixed expenses without an override for this month
+            SELECT * FROM expenses
+            WHERE expense_type = 'fixed' AND overrides_expense_id IS NULL AND year_month IS NULL
+            AND (is_deleted IS NULL OR is_deleted = 0)
+            AND id NOT IN (SELECT overrides_expense_id FROM expenses WHERE year_month = ? AND overrides_expense_id IS NOT NULL)
+
+            UNION ALL
+
+            -- Variable expenses for this month
+            SELECT * FROM expenses
+            WHERE expense_type = 'variable' AND year_month = ? AND overrides_expense_id IS NULL
+            AND (is_deleted IS NULL OR is_deleted = 0)
+
+            UNION ALL
+
+            -- Fixed overrides for this month
+            SELECT * FROM expenses
+            WHERE expense_type = 'fixed' AND overrides_expense_id IS NOT NULL AND year_month = ? AND (is_deleted IS NULL OR is_deleted = 0)
+        ) e
     `),
   getIncomesForOverview: db.prepare('SELECT amount FROM incomes WHERE year_month = ?'),
 };
