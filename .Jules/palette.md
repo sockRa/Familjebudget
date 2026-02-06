@@ -37,3 +37,7 @@
 ## 2026-02-15 - Button Loading States
 **Learning:** Replacing button text entirely with a spinner causes layout shifts (shrinking) and bad UX.
 **Action:** Retain button text alongside the spinner (e.g., `<Spinner /> Saving...`) and enforce a `min-width` on the button to maintain layout stability.
+
+## 2026-05-18 - Semantic Charts
+**Learning:** Custom charts made of `div`s are invisible to screen readers. Using `role="list"` and `role="listitem"` with descriptive `aria-label`s turns them into navigable data lists.
+**Action:** Annotate custom charts with `role="list"`, items with `role="listitem"` and `tabIndex={0}`, and provide full context in `aria-label` (e.g., "Month: Amount") while hiding redundant visual text.
