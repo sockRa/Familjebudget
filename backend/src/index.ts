@@ -11,6 +11,7 @@ import expensesRouter from './routes/expenses.js';
 import overviewRouter from './routes/overview.js';
 import settingsRouter from './routes/settings.js';
 import statisticsRouter from './routes/statistics.js';
+import syncRouter from './routes/sync.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -33,6 +34,7 @@ app.use('/api/expenses', expensesRouter);
 app.use('/api/overview', overviewRouter);
 app.use('/api/settings', settingsRouter);
 app.use('/api/statistics', statisticsRouter);
+app.use('/api/sync', syncRouter);
 
 // Health check
 app.get('/api/health', (req: express.Request, res: express.Response) => {

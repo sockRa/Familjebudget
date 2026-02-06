@@ -2,6 +2,12 @@ import type { Category, Income, Expense, MonthlyOverview, Settings, MonthlyStats
 
 const API_BASE = '/api';
 
+export interface SyncData {
+    incomes: Income[];
+    expenses: Expense[];
+    previousOverview: MonthlyOverview;
+}
+
 // Custom error class with structured details
 export class ApiError extends Error {
     status: number;
@@ -115,4 +121,10 @@ export const settingsApi = {
 export const statisticsApi = {
     getMonthly: (startMonth: number, endMonth: number) =>
         fetchJSON<MonthlyStats[]>(`/statistics/monthly?start=${startMonth}&end=${endMonth}`),
+};
+
+// Sync
+export const syncApi = {
+    get: (yearMonth: number) =>
+        fetchJSON<SyncData>(`/sync/${yearMonth}`),
 };
