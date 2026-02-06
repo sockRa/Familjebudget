@@ -108,10 +108,16 @@ export function StatisticsPanel({ currentMonth }: StatisticsPanelProps) {
                 <h3 className="section-title" style={{ marginBottom: 'var(--space-lg)' }}>
                     Utgifter per månad
                 </h3>
-                <div className="simple-bar-chart">
+                <div className="simple-bar-chart" role="list" aria-label="Utgifter per månad diagram">
                     {stats.map(s => (
-                        <div key={s.yearMonth} className="bar-item">
-                            <div className="bar-container">
+                        <div
+                            key={s.yearMonth}
+                            className="bar-item"
+                            role="listitem"
+                            tabIndex={0}
+                            aria-label={`${formatYearMonth(s.yearMonth)}: ${formatCurrency(s.totalExpenses)}`}
+                        >
+                            <div className="bar-container" aria-hidden="true">
                                 <div
                                     className="bar-fill"
                                     style={{
@@ -121,7 +127,7 @@ export function StatisticsPanel({ currentMonth }: StatisticsPanelProps) {
                                     <span className="bar-value">{formatCurrency(s.totalExpenses)}</span>
                                 </div>
                             </div>
-                            <div className="bar-label">
+                            <div className="bar-label" aria-hidden="true">
                                 {formatYearMonth(s.yearMonth).split(' ')[0].slice(0, 3)}
                             </div>
                         </div>
@@ -135,22 +141,28 @@ export function StatisticsPanel({ currentMonth }: StatisticsPanelProps) {
                     <h3 className="section-title" style={{ marginBottom: 'var(--space-lg)' }}>
                         Topp 5 kategorier
                     </h3>
-                    <div className="category-breakdown">
+                    <div className="category-breakdown" role="list" aria-label="Utgifter per kategori diagram">
                         {sortedCategories.map(([category, amount]) => {
                             const percentage = (amount / totalExpenses) * 100;
                             return (
-                                <div key={category} className="category-row">
-                                    <div className="category-info">
+                                <div
+                                    key={category}
+                                    className="category-row"
+                                    role="listitem"
+                                    tabIndex={0}
+                                    aria-label={`${category || 'Okategoriserat'}: ${formatCurrency(amount)} (${percentage.toFixed(1)}%)`}
+                                >
+                                    <div className="category-info" aria-hidden="true">
                                         <span className="category-name">{category || 'Okategoriserat'}</span>
                                         <span className="category-amount">{formatCurrency(amount)}</span>
                                     </div>
-                                    <div className="category-bar-bg">
+                                    <div className="category-bar-bg" aria-hidden="true">
                                         <div
                                             className="category-bar-fill"
                                             style={{ width: `${percentage}%` }}
                                         />
                                     </div>
-                                    <span className="category-percent">{percentage.toFixed(1)}%</span>
+                                    <span className="category-percent" aria-hidden="true">{percentage.toFixed(1)}%</span>
                                 </div>
                             );
                         })}
